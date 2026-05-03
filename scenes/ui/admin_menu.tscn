@@ -1,0 +1,53 @@
+[gd_scene format=3 uid="uid://cax2y2k38d24"]
+
+[ext_resource type="Script" path="res://scripts/ui/admin_menu.gd" id="1_admin"]
+[ext_resource type="Theme" uid="uid://cxab3x3872j8x" path="res://resources/themes/main_theme.tres" id="2_theme"]
+
+[node name="AdminMenu" type="CanvasLayer"]
+layer = 140
+script = ExtResource("1_admin")
+
+[node name="Container" type="CenterContainer" parent="."]
+unique_name_in_owner = true
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("2_theme")
+
+[node name="PanelContainer" type="PanelContainer" parent="Container"]
+custom_minimum_size = Vector2(400, 300)
+layout_mode = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Container/PanelContainer"]
+layout_mode = 2
+theme_override_constants/separation = 20
+
+[node name="Label" type="Label" parent="Container/PanelContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 32
+text = "Admin Menu"
+horizontal_alignment = 1
+
+[node name="HSeparator" type="HSeparator" parent="Container/PanelContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="BtnAddPoints" type="Button" parent="Container/PanelContainer/VBoxContainer"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 60)
+layout_mode = 2
+text = "Add 10 Points"
+
+[node name="BtnWipeSave" type="Button" parent="Container/PanelContainer/VBoxContainer"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 60)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.2, 0.2, 1)
+text = "WIPE SAVE FILE"
+
+[node name="BtnClose" type="Button" parent="Container/PanelContainer/VBoxContainer"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 60)
+layout_mode = 2
+text = "Close"

@@ -1,0 +1,16 @@
+[gd_scene load_steps=5 format=3 uid="uid://dp61v7f3pydqy"]
+
+[ext_resource type="Shader" path="res://shaders/chroma_key.gdshader" id="1_shader"]
+[ext_resource type="Texture2D" path="res://assets/textures/gold_ticket.jpg" id="2_tex"]
+[ext_resource type="Script" path="res://scripts/vfx/gold_ticket.gd" id="3_script"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_ticket"]
+shader = ExtResource("1_shader")
+shader_parameter/key_color = Color(1, 0, 1, 1)
+shader_parameter/tolerance = 0.1
+
+[node name="GoldTicket" type="Sprite2D"]
+material = SubResource("ShaderMaterial_ticket")
+scale = Vector2(0.25, 0.25)
+texture = ExtResource("2_tex")
+script = ExtResource("3_script")

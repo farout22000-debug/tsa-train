@@ -1,0 +1,222 @@
+[gd_scene format=3 uid="uid://c53laj12x8d4"]
+
+[ext_resource type="Script" uid="uid://b1rnqneyk5sv2" path="res://scripts/ui/main.gd" id="1_main"]
+[ext_resource type="Texture2D" uid="uid://l6gkgsi4mxhr" path="res://assets/sprites/train.jpg" id="2_train"]
+[ext_resource type="Theme" uid="uid://cxab3x3872j8x" path="res://resources/themes/main_theme.tres" id="3_theme"]
+[ext_resource type="Texture2D" uid="uid://vyokebb2k4vj" path="res://assets/sprites/clouds_far.jpg" id="4_clouds"]
+[ext_resource type="Texture2D" uid="uid://mv7tqqcmt6ly" path="res://assets/sprites/track.jpg" id="5_track"]
+[ext_resource type="Script" uid="uid://d2krix1crt8qs" path="res://scripts/ui/parallax_scroller.gd" id="6_parallax"]
+[ext_resource type="Script" uid="uid://dky6qyueyx52r" path="res://scripts/ui/shake_camera.gd" id="7_camera"]
+[ext_resource type="Texture2D" path="res://assets/textures/gold_ticket.jpg" id="8_ticket"]
+[ext_resource type="Shader" path="res://shaders/chroma_key.gdshader" id="9_shader"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_ui_ticket"]
+shader = ExtResource("9_shader")
+shader_parameter/key_color = Color(1, 0, 1, 1)
+shader_parameter/tolerance = 0.1
+
+[node name="MainScreen" type="Node2D" unique_id=1726703156]
+script = ExtResource("1_main")
+
+[node name="Camera2D" type="Camera2D" parent="." unique_id=1665961851]
+anchor_mode = 0
+script = ExtResource("7_camera")
+
+[node name="ParallaxBackground" type="ParallaxBackground" parent="." unique_id=239599223]
+layer = -1
+script = ExtResource("6_parallax")
+
+[node name="ParallaxLayer" type="ParallaxLayer" parent="ParallaxBackground" unique_id=177933775]
+motion_scale = Vector2(0.2, 0)
+motion_mirroring = Vector2(1024, 0)
+
+[node name="Sprite2D" type="Sprite2D" parent="ParallaxBackground/ParallaxLayer" unique_id=1363220486]
+texture_filter = 1
+texture = ExtResource("4_clouds")
+centered = false
+
+[node name="ParallaxLayer2" type="ParallaxLayer" parent="ParallaxBackground" unique_id=1704562251]
+position = Vector2(-1, -305)
+motion_scale = Vector2(1, 0)
+motion_mirroring = Vector2(1024, 0)
+
+[node name="Sprite2D" type="Sprite2D" parent="ParallaxBackground/ParallaxLayer2" unique_id=2001525934]
+texture_filter = 1
+position = Vector2(0, 300)
+texture = ExtResource("5_track")
+centered = false
+
+[node name="UILayer" type="CanvasLayer" parent="." unique_id=2071870168]
+
+[node name="HBoxContainer" type="HBoxContainer" parent="UILayer" unique_id=1174939090]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("3_theme")
+
+[node name="LeftArea" type="VBoxContainer" parent="UILayer/HBoxContainer" unique_id=1584531342]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 20
+alignment = 1
+
+[node name="Header" type="HBoxContainer" parent="UILayer/HBoxContainer/LeftArea" unique_id=1287611813]
+layout_mode = 2
+alignment = 1
+
+[node name="PlayerNameLabel" type="Label" parent="UILayer/HBoxContainer/LeftArea/Header" unique_id=1470422887]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 32
+text = "Conductor Name"
+
+[node name="MarginContainer" type="MarginContainer" parent="UILayer/HBoxContainer/LeftArea/Header" unique_id=1425431505]
+custom_minimum_size = Vector2(40, 0)
+layout_mode = 2
+
+[node name="ScoreLabel" type="Label" parent="UILayer/HBoxContainer/LeftArea/Header" unique_id=2040626067]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.8, 0.2, 1)
+theme_override_font_sizes/font_size = 32
+text = "Distance: 0 km"
+
+[node name="MarginContainer2" type="MarginContainer" parent="UILayer/HBoxContainer/LeftArea/Header"]
+custom_minimum_size = Vector2(40, 0)
+layout_mode = 2
+
+[node name="SpeedLabel" type="Label" parent="UILayer/HBoxContainer/LeftArea/Header"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.8, 1.0, 1)
+theme_override_font_sizes/font_size = 32
+text = "Speed: 20 km/h"
+
+[node name="MarginContainer3" type="MarginContainer" parent="UILayer/HBoxContainer/LeftArea/Header"]
+custom_minimum_size = Vector2(40, 0)
+layout_mode = 2
+
+[node name="TicketBin" type="HBoxContainer" parent="UILayer/HBoxContainer/LeftArea/Header"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="TicketIcon" type="TextureRect" parent="UILayer/HBoxContainer/LeftArea/Header/TicketBin"]
+material = SubResource("ShaderMaterial_ui_ticket")
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+texture = ExtResource("8_ticket")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="TicketLabel" type="Label" parent="UILayer/HBoxContainer/LeftArea/Header/TicketBin"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 32
+text = "x 0"
+
+[node name="CenterContainer" type="CenterContainer" parent="UILayer/HBoxContainer/LeftArea" unique_id=168483664]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="TrainImage" type="TextureRect" parent="UILayer/HBoxContainer/LeftArea/CenterContainer" unique_id=1753412385]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(256, 256)
+layout_mode = 2
+texture = ExtResource("2_train")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="SteamParticles" type="CPUParticles2D" parent="UILayer/HBoxContainer/LeftArea/CenterContainer/TrainImage" unique_id=1920465720]
+unique_name_in_owner = true
+position = Vector2(128, 20)
+emitting = false
+amount = 12
+lifetime = 3.0
+emission_shape = 1
+emission_sphere_radius = 15.0
+gravity = Vector2(0, -40)
+scale_amount_min = 15.0
+scale_amount_max = 35.0
+color = Color(0.9, 0.9, 0.9, 0.4)
+
+[node name="RightSidebar" type="PanelContainer" parent="UILayer/HBoxContainer" unique_id=1865403748]
+custom_minimum_size = Vector2(300, 0)
+layout_mode = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="UILayer/HBoxContainer/RightSidebar" unique_id=1588598048]
+layout_mode = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 20
+
+[node name="VBoxContainer" type="VBoxContainer" parent="UILayer/HBoxContainer/RightSidebar/MarginContainer" unique_id=507219967]
+layout_mode = 2
+theme_override_constants/separation = 15
+
+[node name="Title" type="Label" parent="UILayer/HBoxContainer/RightSidebar/MarginContainer/VBoxContainer" unique_id=887570723]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "Actions"
+horizontal_alignment = 1
+
+[node name="HSeparator" type="HSeparator" parent="UILayer/HBoxContainer/RightSidebar/MarginContainer/VBoxContainer" unique_id=98926544]
+layout_mode = 2
+
+[node name="UtilityButtons" type="HBoxContainer" parent="UILayer/HBoxContainer/RightSidebar/MarginContainer/VBoxContainer"]
+layout_mode = 2
+alignment = 1
+
+[node name="BtnMute" type="Button" parent="UILayer/HBoxContainer/RightSidebar/MarginContainer/VBoxContainer/UtilityButtons"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+focus_mode = 0
+text = "Mute"
+
+[node name="BtnFullscreen" type="Button" parent="UILayer/HBoxContainer/RightSidebar/MarginContainer/VBoxContainer/UtilityButtons"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+focus_mode = 0
+text = "Fullscreen"
+
+[node name="HSeparator2" type="HSeparator" parent="UILayer/HBoxContainer/RightSidebar/MarginContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="BtnCar" type="Button" parent="UILayer/HBoxContainer/RightSidebar/MarginContainer/VBoxContainer" unique_id=1873366778]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 60)
+layout_mode = 2
+focus_mode = 0
+text = "Car (+1)"
+
+[node name="BtnHome" type="Button" parent="UILayer/HBoxContainer/RightSidebar/MarginContainer/VBoxContainer" unique_id=1403689174]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 60)
+layout_mode = 2
+focus_mode = 0
+text = "Home (+2)"
+
+[node name="BtnCtp" type="Button" parent="UILayer/HBoxContainer/RightSidebar/MarginContainer/VBoxContainer" unique_id=1034971160]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 60)
+layout_mode = 2
+focus_mode = 0
+text = "CTP (+3)"
+
+[node name="BtnRsa" type="Button" parent="UILayer/HBoxContainer/RightSidebar/MarginContainer/VBoxContainer" unique_id=1206728196]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 60)
+layout_mode = 2
+focus_mode = 0
+text = "RSA (+4)"
+
+[node name="BtnRenewal" type="Button" parent="UILayer/HBoxContainer/RightSidebar/MarginContainer/VBoxContainer" unique_id=717854499]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 60)
+layout_mode = 2
+focus_mode = 0
+text = "Renewal (+1)"
