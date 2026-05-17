@@ -66,6 +66,7 @@ custom_minimum_size = Vector2(300, 50)
 layout_mode = 2
 placeholder_text = "TSA Email"
 alignment = 1
+virtual_keyboard_type = 5
 
 [node name="PassLogin" type="LineEdit" parent="CenterContainer/VBoxContainer/TabContainer/Sign In/VBox"]
 unique_name_in_owner = true
@@ -74,6 +75,7 @@ layout_mode = 2
 placeholder_text = "Password"
 alignment = 1
 secret = true
+virtual_keyboard_type = 6
 
 [node name="BtnLogin" type="Button" parent="CenterContainer/VBoxContainer/TabContainer/Sign In/VBox"]
 unique_name_in_owner = true
@@ -106,6 +108,7 @@ custom_minimum_size = Vector2(300, 50)
 layout_mode = 2
 placeholder_text = "TSA Email"
 alignment = 1
+virtual_keyboard_type = 5
 
 [node name="TeamSelect" type="OptionButton" parent="CenterContainer/VBoxContainer/TabContainer/Register/VBox"]
 unique_name_in_owner = true
@@ -120,6 +123,7 @@ layout_mode = 2
 placeholder_text = "Password"
 alignment = 1
 secret = true
+virtual_keyboard_type = 6
 
 [node name="BtnRegister" type="Button" parent="CenterContainer/VBoxContainer/TabContainer/Register/VBox"]
 unique_name_in_owner = true

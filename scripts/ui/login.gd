@@ -72,7 +72,7 @@ func _ready():
 func _validate_inputs() -> bool:
 	error_label.text = ""
 	
-	var email = email_reg.text.strip_edges() if is_registering else email_login.text.strip_edges()
+	var email = email_reg.text.strip_edges().to_lower() if is_registering else email_login.text.strip_edges().to_lower()
 	var entered_code = pass_reg.text.strip_edges() if is_registering else pass_login.text.strip_edges()
 	
 	if is_registering:
@@ -128,18 +128,18 @@ func _on_client_connected():
 	
 	if is_registering:
 		var player_name = name_reg.text.strip_edges()
-		var email = email_reg.text.strip_edges()
+		var email = email_reg.text.strip_edges().to_lower()
 		var password = pass_reg.text.strip_edges()
 		var team_id = team_select.get_selected_id() + 1
 		GameManager.request_register.rpc_id(1, player_name, email, team_id, password)
 	else:
-		var email = email_login.text.strip_edges()
+		var email = email_login.text.strip_edges().to_lower()
 		var password = pass_login.text.strip_edges()
 		GameManager.request_login.rpc_id(1, email, password)
 
 func _on_auth_result(success: bool, message: String, team_id: int, role: String = "player", player_name: String = "", tickets: float = 0.0, has_seen_tutorial: bool = false, action_counts: Dictionary = {}):
 	if success:
-		var email = email_reg.text.strip_edges() if is_registering else email_login.text.strip_edges()
+		var email = email_reg.text.strip_edges().to_lower() if is_registering else email_login.text.strip_edges().to_lower()
 		
 		# Load the user-specific save state (tickets, tutorials, etc.)
 		GameManager.load_account_game(email)
@@ -191,7 +191,7 @@ func _on_verify_pressed():
 		error_label.text = "Code must be 6 digits."
 		return
 		
-	var email = email_reg.text.strip_edges()
+	var email = email_reg.text.strip_edges().to_lower()
 	btn_verify.disabled = true
 	error_label.text = "Verifying..."
 	GameManager.verify_registration.rpc_id(1, email, code)
