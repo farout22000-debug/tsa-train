@@ -67,6 +67,10 @@ func _ready():
 		
 	%BtnClose.pressed.connect(func(): queue_free())
 
+	# Bind ControlTower size dynamically to the viewport size for perfect centering
+	get_viewport().size_changed.connect(_on_viewport_size_changed)
+	_on_viewport_size_changed()
+
 func _on_wipe_confirmed():
 	GameManager.reset_simulation()
 	get_tree().reload_current_scene()
@@ -108,3 +112,6 @@ func _on_title_gui_input(event: InputEvent):
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 		if multiplayer.has_multiplayer_peer():
 			GameManager.toggle_2fa_admin.rpc_id(1)
+
+func _on_viewport_size_changed():
+	size = get_viewport_rect().size
