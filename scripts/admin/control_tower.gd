@@ -115,3 +115,9 @@ func _on_title_gui_input(event: InputEvent):
 
 func _on_viewport_size_changed():
 	size = get_viewport_rect().size
+	# Propagate size to child panels so they scale and center correctly even when opened from a hidden state
+	if has_node("TeamDetailModal"): $TeamDetailModal.size = size
+	if has_node("UserManagementPanel"): $UserManagementPanel.size = size
+	if has_node("StressTestPanel"): $StressTestPanel.size = size
+	if has_node("ButtonCustomizerPanel"): $ButtonCustomizerPanel.size = size
+	if has_node("BugReportsPanel"): $BugReportsPanel.size = size
