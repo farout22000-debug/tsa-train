@@ -44,20 +44,88 @@ theme_override_colors/font_color = Color(0.6, 0.6, 0.6, 1)
 text = "System Authorization Required"
 horizontal_alignment = 1
 
-[node name="NameInput" type="LineEdit" parent="CenterContainer/VBoxContainer"]
+[node name="TabContainer" type="TabContainer" parent="CenterContainer/VBoxContainer"]
+custom_minimum_size = Vector2(320, 0)
+layout_mode = 2
+tab_alignment = 1
+
+[node name="Sign In" type="MarginContainer" parent="CenterContainer/VBoxContainer/TabContainer"]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 20
+
+[node name="VBox" type="VBoxContainer" parent="CenterContainer/VBoxContainer/TabContainer/Sign In"]
+layout_mode = 2
+theme_override_constants/separation = 15
+
+[node name="EmailLogin" type="LineEdit" parent="CenterContainer/VBoxContainer/TabContainer/Sign In/VBox"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(300, 50)
 layout_mode = 2
-placeholder_text = "Conductor ID (First Name)"
+placeholder_text = "TSA Email"
 alignment = 1
 
-[node name="PasscodeInput" type="LineEdit" parent="CenterContainer/VBoxContainer"]
+[node name="PassLogin" type="LineEdit" parent="CenterContainer/VBoxContainer/TabContainer/Sign In/VBox"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(300, 50)
 layout_mode = 2
-placeholder_text = "Authorization Code"
+placeholder_text = "Password"
 alignment = 1
 secret = true
+
+[node name="BtnLogin" type="Button" parent="CenterContainer/VBoxContainer/TabContainer/Sign In/VBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+text = "Log In"
+
+[node name="Register" type="MarginContainer" parent="CenterContainer/VBoxContainer/TabContainer"]
+visible = false
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 20
+
+[node name="VBox" type="VBoxContainer" parent="CenterContainer/VBoxContainer/TabContainer/Register"]
+layout_mode = 2
+theme_override_constants/separation = 15
+
+[node name="NameReg" type="LineEdit" parent="CenterContainer/VBoxContainer/TabContainer/Register/VBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(300, 50)
+layout_mode = 2
+placeholder_text = "Conductor ID"
+alignment = 1
+
+[node name="EmailReg" type="LineEdit" parent="CenterContainer/VBoxContainer/TabContainer/Register/VBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(300, 50)
+layout_mode = 2
+placeholder_text = "TSA Email"
+alignment = 1
+
+[node name="TeamSelect" type="OptionButton" parent="CenterContainer/VBoxContainer/TabContainer/Register/VBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(300, 50)
+layout_mode = 2
+alignment = 1
+
+[node name="PassReg" type="LineEdit" parent="CenterContainer/VBoxContainer/TabContainer/Register/VBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(300, 50)
+layout_mode = 2
+placeholder_text = "Password"
+alignment = 1
+secret = true
+
+[node name="BtnRegister" type="Button" parent="CenterContainer/VBoxContainer/TabContainer/Register/VBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+text = "Register"
 
 [node name="RememberMeToggle" type="CheckBox" parent="CenterContainer/VBoxContainer"]
 unique_name_in_owner = true
@@ -72,9 +140,59 @@ theme_override_colors/font_color = Color(1, 0.3, 0.3, 1)
 text = ""
 horizontal_alignment = 1
 
-[node name="ConnectButton" type="Button" parent="CenterContainer/VBoxContainer"]
+[node name="VerificationPanel" type="ColorRect" parent="."]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 60)
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.12, 0.14, 0.2, 0.95)
+
+[node name="CenterContainer" type="CenterContainer" parent="VerificationPanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="VerificationPanel/CenterContainer"]
+layout_mode = 2
+theme_override_constants/separation = 20
+
+[node name="Label" type="Label" parent="VerificationPanel/CenterContainer/VBoxContainer"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 24
-text = "Connect"
+text = "Verification Required"
+horizontal_alignment = 1
+
+[node name="Instructions" type="Label" parent="VerificationPanel/CenterContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.7, 0.7, 1)
+text = "Enter the 6-digit code sent to your TSA email."
+horizontal_alignment = 1
+
+[node name="CodeInput" type="LineEdit" parent="VerificationPanel/CenterContainer/VBoxContainer"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(200, 60)
+layout_mode = 2
+theme_override_font_sizes/font_size = 32
+placeholder_text = "000000"
+alignment = 1
+max_length = 6
+
+[node name="BtnVerify" type="Button" parent="VerificationPanel/CenterContainer/VBoxContainer"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+text = "Verify Account"
+
+[node name="BtnCancelVerify" type="Button" parent="VerificationPanel/CenterContainer/VBoxContainer"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+text = "Cancel"
+

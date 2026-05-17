@@ -1,0 +1,138 @@
+[gd_scene load_steps=3 format=3 uid="uid://control_tower"]
+
+[ext_resource type="Script" path="res://scripts/admin/control_tower.gd" id="1_abcde"]
+[ext_resource type="PackedScene" uid="uid://admin_console" path="res://scenes/ui/admin_console.tscn" id="2_adminc"]
+[ext_resource type="PackedScene" uid="uid://team_detail_modal" path="res://scenes/ui/team_detail_modal.tscn" id="3_modal"]
+[ext_resource type="PackedScene" uid="uid://user_management_panel" path="res://scenes/admin/user_management_panel.tscn" id="4_umpanel"]
+[ext_resource type="PackedScene" uid="uid://stress_panel_uid" path="res://scenes/admin/stress_test_panel.tscn" id="5_stress"]
+[ext_resource type="PackedScene" uid="uid://btn_customizer_uid" path="res://scenes/admin/button_customizer_panel.tscn" id="6_btncust"]
+[ext_resource type="PackedScene" uid="uid://dj1k2qwf" path="res://scenes/admin/bug_reports_panel.tscn" id="7_bugs"]
+
+[node name="ControlTower" type="Control"]
+
+
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_abcde")
+
+[node name="ColorRect" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.12, 0.12, 0.15, 1)
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 32.0
+offset_top = 32.0
+offset_right = -32.0
+offset_bottom = -32.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Label" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 32
+text = "TSA Train - Control Tower"
+
+[node name="StatusLabel" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+text = "Status: Offline"
+
+[node name="HBoxContainer" type="HBoxContainer" parent="VBoxContainer"]
+layout_mode = 2
+
+[node name="PortInput" type="LineEdit" parent="VBoxContainer/HBoxContainer"]
+layout_mode = 2
+text = "8090"
+placeholder_text = "Port"
+
+[node name="TunnelInput" type="LineEdit" parent="VBoxContainer/HBoxContainer"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(250, 0)
+layout_mode = 2
+placeholder_text = "Tunnel URL (wss://...)"
+
+[node name="BtnHost" type="Button" parent="VBoxContainer/HBoxContainer"]
+layout_mode = 2
+text = "Host Server"
+
+[node name="BtnConsole" type="Button" parent="VBoxContainer/HBoxContainer"]
+layout_mode = 2
+text = "Show Console"
+
+[node name="BtnManageUsers" type="Button" parent="VBoxContainer/HBoxContainer"]
+layout_mode = 2
+text = "Manage Users"
+
+[node name="BtnBugs" type="Button" parent="VBoxContainer/HBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Bugs"
+
+[node name="ControlSpacer" type="Control" parent="VBoxContainer/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="BtnWipeAll" type="Button" parent="VBoxContainer/HBoxContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.3, 0.3, 1)
+text = "Reset Simulation"
+
+[node name="BtnStressTest" type="Button" parent="VBoxContainer/HBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Stress Test"
+
+[node name="BtnButtonsCustomizer" type="Button" parent="VBoxContainer/HBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Customize Buttons"
+
+[node name="BtnClose" type="Button" parent="VBoxContainer/HBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Close Tower"
+
+
+
+
+[node name="TeamGrid" type="GridContainer" parent="VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/h_separation = 20
+theme_override_constants/v_separation = 20
+columns = 5
+
+[node name="AdminConsole" parent="." instance=ExtResource("2_adminc")]
+
+[node name="TeamDetailModal" parent="." instance=ExtResource("3_modal")]
+visible = false
+
+[node name="WipeDialog" type="ConfirmationDialog" parent="."]
+title = "Reset Simulation?"
+dialog_text = "Are you sure you want to reset all distance and speed data back to zero?
+(Users and team rosters will be preserved)."
+ok_button_text = "Reset"
+
+[node name="UserManagementPanel" parent="." instance=ExtResource("4_umpanel")]
+visible = false
+
+[node name="StressTestPanel" parent="." instance=ExtResource("5_stress")]
+visible = false
+
+[node name="ButtonCustomizerPanel" parent="." instance=ExtResource("6_btncust")]
+visible = false
+
+[node name="BugReportsPanel" parent="." instance=ExtResource("7_bugs")]
+visible = false

@@ -15,7 +15,7 @@ func open():
 	visible = true
 
 func _on_add_points_pressed():
-	GameManager.add_action("Admin Cheat", 10)
+	GameManager.add_action("admin_cheat")
 
 func _on_wipe_save_pressed():
 	GameManager.reset_game_data()

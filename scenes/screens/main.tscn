@@ -1,19 +1,30 @@
 [gd_scene format=3 uid="uid://c53laj12x8d4"]
 
 [ext_resource type="Script" uid="uid://b1rnqneyk5sv2" path="res://scripts/ui/main.gd" id="1_main"]
-[ext_resource type="Texture2D" uid="uid://l6gkgsi4mxhr" path="res://assets/sprites/train.jpg" id="2_train"]
+[ext_resource type="Texture2D" uid="uid://cna8hgdpqebad" path="res://assets/sprites/Newtrain.png" id="2_train"]
 [ext_resource type="Theme" uid="uid://cxab3x3872j8x" path="res://resources/themes/main_theme.tres" id="3_theme"]
 [ext_resource type="Texture2D" uid="uid://vyokebb2k4vj" path="res://assets/sprites/clouds_far.jpg" id="4_clouds"]
 [ext_resource type="Texture2D" uid="uid://mv7tqqcmt6ly" path="res://assets/sprites/track.jpg" id="5_track"]
 [ext_resource type="Script" uid="uid://d2krix1crt8qs" path="res://scripts/ui/parallax_scroller.gd" id="6_parallax"]
 [ext_resource type="Script" uid="uid://dky6qyueyx52r" path="res://scripts/ui/shake_camera.gd" id="7_camera"]
-[ext_resource type="Texture2D" path="res://assets/textures/gold_ticket.jpg" id="8_ticket"]
-[ext_resource type="Shader" path="res://shaders/chroma_key.gdshader" id="9_shader"]
+[ext_resource type="Texture2D" uid="uid://dyw7i7buw17p6" path="res://assets/textures/gold_ticket.jpg" id="8_ticket"]
+[ext_resource type="Shader" uid="uid://dx8gk4cro2thf" path="res://shaders/chroma_key.gdshader" id="9_shader"]
+[ext_resource type="Shader" uid="uid://bncwwwdulky7p" path="res://shaders/pixel_art.gdshader" id="10_pixel"]
+[ext_resource type="PackedScene" path="res://scenes/ui/disconnection_overlay.tscn" id="11_overlay"]
+[ext_resource type="PackedScene" path="res://scenes/ui/welcome_modal.tscn" id="12_welcome"]
+[ext_resource type="PackedScene" uid="uid://c83jkw12" path="res://scenes/ui/bug_report_modal.tscn" id="14_bug_modal"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_ui_ticket"]
 shader = ExtResource("9_shader")
 shader_parameter/key_color = Color(1, 0, 1, 1)
 shader_parameter/tolerance = 0.1
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_train_pixel"]
+shader = ExtResource("10_pixel")
+shader_parameter/pixel_size = 4.0
+shader_parameter/color_levels = 12.0
+shader_parameter/dither_strength = 0.05
+shader_parameter/contrast = 1.2
 
 [node name="MainScreen" type="Node2D" unique_id=1726703156]
 script = ExtResource("1_main")
@@ -30,7 +41,8 @@ script = ExtResource("6_parallax")
 motion_scale = Vector2(0.2, 0)
 motion_mirroring = Vector2(1024, 0)
 
-[node name="Sprite2D" type="Sprite2D" parent="ParallaxBackground/ParallaxLayer" unique_id=1363220486]
+[node name="SkySprite" type="Sprite2D" parent="ParallaxBackground/ParallaxLayer" unique_id=1363220486]
+unique_name_in_owner = true
 texture_filter = 1
 texture = ExtResource("4_clouds")
 centered = false
@@ -40,7 +52,8 @@ position = Vector2(-1, -305)
 motion_scale = Vector2(1, 0)
 motion_mirroring = Vector2(1024, 0)
 
-[node name="Sprite2D" type="Sprite2D" parent="ParallaxBackground/ParallaxLayer2" unique_id=2001525934]
+[node name="TrackSprite" type="Sprite2D" parent="ParallaxBackground/ParallaxLayer2" unique_id=2001525934]
+unique_name_in_owner = true
 texture_filter = 1
 position = Vector2(0, 300)
 texture = ExtResource("5_track")
@@ -66,16 +79,6 @@ alignment = 1
 layout_mode = 2
 alignment = 1
 
-[node name="PlayerNameLabel" type="Label" parent="UILayer/HBoxContainer/LeftArea/Header" unique_id=1470422887]
-unique_name_in_owner = true
-layout_mode = 2
-theme_override_font_sizes/font_size = 32
-text = "Conductor Name"
-
-[node name="MarginContainer" type="MarginContainer" parent="UILayer/HBoxContainer/LeftArea/Header" unique_id=1425431505]
-custom_minimum_size = Vector2(40, 0)
-layout_mode = 2
-
 [node name="ScoreLabel" type="Label" parent="UILayer/HBoxContainer/LeftArea/Header" unique_id=2040626067]
 unique_name_in_owner = true
 layout_mode = 2
@@ -83,26 +86,26 @@ theme_override_colors/font_color = Color(1, 0.8, 0.2, 1)
 theme_override_font_sizes/font_size = 32
 text = "Distance: 0 km"
 
-[node name="MarginContainer2" type="MarginContainer" parent="UILayer/HBoxContainer/LeftArea/Header"]
+[node name="MarginContainer2" type="MarginContainer" parent="UILayer/HBoxContainer/LeftArea/Header" unique_id=1072812124]
 custom_minimum_size = Vector2(40, 0)
 layout_mode = 2
 
-[node name="SpeedLabel" type="Label" parent="UILayer/HBoxContainer/LeftArea/Header"]
+[node name="SpeedLabel" type="Label" parent="UILayer/HBoxContainer/LeftArea/Header" unique_id=670173444]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_colors/font_color = Color(0.5, 0.8, 1.0, 1)
+theme_override_colors/font_color = Color(0.5, 0.8, 1, 1)
 theme_override_font_sizes/font_size = 32
 text = "Speed: 20 km/h"
 
-[node name="MarginContainer3" type="MarginContainer" parent="UILayer/HBoxContainer/LeftArea/Header"]
+[node name="MarginContainer3" type="MarginContainer" parent="UILayer/HBoxContainer/LeftArea/Header" unique_id=126332690]
 custom_minimum_size = Vector2(40, 0)
 layout_mode = 2
 
-[node name="TicketBin" type="HBoxContainer" parent="UILayer/HBoxContainer/LeftArea/Header"]
+[node name="TicketBin" type="HBoxContainer" parent="UILayer/HBoxContainer/LeftArea/Header" unique_id=652722957]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="TicketIcon" type="TextureRect" parent="UILayer/HBoxContainer/LeftArea/Header/TicketBin"]
+[node name="TicketIcon" type="TextureRect" parent="UILayer/HBoxContainer/LeftArea/Header/TicketBin" unique_id=387447829]
 material = SubResource("ShaderMaterial_ui_ticket")
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
@@ -110,25 +113,52 @@ texture = ExtResource("8_ticket")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="TicketLabel" type="Label" parent="UILayer/HBoxContainer/LeftArea/Header/TicketBin"]
+[node name="TicketLabel" type="Label" parent="UILayer/HBoxContainer/LeftArea/Header/TicketBin" unique_id=412978337]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_font_sizes/font_size = 32
 text = "x 0"
 
+[node name="SubHeader" type="HBoxContainer" parent="UILayer/HBoxContainer/LeftArea" unique_id=1934500382]
+layout_mode = 2
+alignment = 1
+
+[node name="PlayerNameLabel" type="Label" parent="UILayer/HBoxContainer/LeftArea/SubHeader" unique_id=1927162495]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 32
+text = "Conductor Name"
+
 [node name="CenterContainer" type="CenterContainer" parent="UILayer/HBoxContainer/LeftArea" unique_id=168483664]
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="TrainImage" type="TextureRect" parent="UILayer/HBoxContainer/LeftArea/CenterContainer" unique_id=1753412385]
-unique_name_in_owner = true
+[node name="TrainContainer" type="Control" parent="UILayer/HBoxContainer/LeftArea/CenterContainer" unique_id=575250235]
 custom_minimum_size = Vector2(256, 256)
 layout_mode = 2
+
+[node name="TrainImage" type="TextureRect" parent="UILayer/HBoxContainer/LeftArea/CenterContainer/TrainContainer" unique_id=1753412385]
+unique_name_in_owner = true
+texture_filter = 1
+material = SubResource("ShaderMaterial_train_pixel")
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -640.0
+offset_top = -640.0
+offset_right = 640.0
+offset_bottom = 640.0
+grow_horizontal = 2
+grow_vertical = 2
 texture = ExtResource("2_train")
 expand_mode = 1
 stretch_mode = 5
+flip_h = true
 
-[node name="SteamParticles" type="CPUParticles2D" parent="UILayer/HBoxContainer/LeftArea/CenterContainer/TrainImage" unique_id=1920465720]
+[node name="SteamParticles" type="CPUParticles2D" parent="UILayer/HBoxContainer/LeftArea/CenterContainer/TrainContainer/TrainImage" unique_id=1920465720]
 unique_name_in_owner = true
 position = Vector2(128, 20)
 emitting = false
@@ -141,7 +171,29 @@ scale_amount_min = 15.0
 scale_amount_max = 35.0
 color = Color(0.9, 0.9, 0.9, 0.4)
 
-[node name="RightSidebar" type="PanelContainer" parent="UILayer/HBoxContainer" unique_id=1865403748]
+[node name="LogPanel" type="PanelContainer" parent="UILayer/HBoxContainer/LeftArea" unique_id=910696854]
+custom_minimum_size = Vector2(0, 150)
+layout_mode = 2
+
+[node name="Margin" type="MarginContainer" parent="UILayer/HBoxContainer/LeftArea/LogPanel" unique_id=2011622432]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
+
+[node name="LogScroll" type="ScrollContainer" parent="UILayer/HBoxContainer/LeftArea/LogPanel/Margin" unique_id=834619856]
+unique_name_in_owner = true
+layout_mode = 2
+horizontal_scroll_mode = 0
+
+[node name="LogVBox" type="VBoxContainer" parent="UILayer/HBoxContainer/LeftArea/LogPanel/Margin/LogScroll" unique_id=1417930274]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="RightSidebar" type="PanelContainer" parent="UILayer/HBoxContainer" unique_id=718288428]
 custom_minimum_size = Vector2(300, 0)
 layout_mode = 2
 
@@ -165,58 +217,55 @@ horizontal_alignment = 1
 [node name="HSeparator" type="HSeparator" parent="UILayer/HBoxContainer/RightSidebar/MarginContainer/VBoxContainer" unique_id=98926544]
 layout_mode = 2
 
-[node name="UtilityButtons" type="HBoxContainer" parent="UILayer/HBoxContainer/RightSidebar/MarginContainer/VBoxContainer"]
+[node name="UtilityButtons" type="HBoxContainer" parent="UILayer/HBoxContainer/RightSidebar/MarginContainer/VBoxContainer" unique_id=1392627599]
 layout_mode = 2
 alignment = 1
 
-[node name="BtnMute" type="Button" parent="UILayer/HBoxContainer/RightSidebar/MarginContainer/VBoxContainer/UtilityButtons"]
+[node name="BtnMute" type="Button" parent="UILayer/HBoxContainer/RightSidebar/MarginContainer/VBoxContainer/UtilityButtons" unique_id=1300666301]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 focus_mode = 0
 text = "Mute"
 
-[node name="BtnFullscreen" type="Button" parent="UILayer/HBoxContainer/RightSidebar/MarginContainer/VBoxContainer/UtilityButtons"]
+[node name="BtnLeaderboard" type="Button" parent="UILayer/HBoxContainer/RightSidebar/MarginContainer/VBoxContainer/UtilityButtons" unique_id=19213757]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 focus_mode = 0
-text = "Fullscreen"
+text = "Leaderboard"
 
-[node name="HSeparator2" type="HSeparator" parent="UILayer/HBoxContainer/RightSidebar/MarginContainer/VBoxContainer"]
-layout_mode = 2
-
-[node name="BtnCar" type="Button" parent="UILayer/HBoxContainer/RightSidebar/MarginContainer/VBoxContainer" unique_id=1873366778]
+[node name="BtnReportBug" type="Button" parent="UILayer/HBoxContainer/RightSidebar/MarginContainer/VBoxContainer/UtilityButtons" unique_id=1437040179]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 60)
 layout_mode = 2
+size_flags_horizontal = 3
 focus_mode = 0
-text = "Car (+1)"
+theme_override_colors/font_color = Color(0.8, 0.9, 1, 1)
+text = "Report Bug"
 
-[node name="BtnHome" type="Button" parent="UILayer/HBoxContainer/RightSidebar/MarginContainer/VBoxContainer" unique_id=1403689174]
+[node name="BtnAdmin" type="Button" parent="UILayer/HBoxContainer/RightSidebar/MarginContainer/VBoxContainer/UtilityButtons" unique_id=387665695]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 60)
+visible = false
 layout_mode = 2
+size_flags_horizontal = 3
 focus_mode = 0
-text = "Home (+2)"
+theme_override_colors/font_color = Color(1, 0.5, 0.5, 1)
+text = "Tower"
 
-[node name="BtnCtp" type="Button" parent="UILayer/HBoxContainer/RightSidebar/MarginContainer/VBoxContainer" unique_id=1034971160]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 60)
+[node name="HSeparator2" type="HSeparator" parent="UILayer/HBoxContainer/RightSidebar/MarginContainer/VBoxContainer" unique_id=1473715720]
 layout_mode = 2
-focus_mode = 0
-text = "CTP (+3)"
 
-[node name="BtnRsa" type="Button" parent="UILayer/HBoxContainer/RightSidebar/MarginContainer/VBoxContainer" unique_id=1206728196]
+[node name="ActionButtonsContainer" type="VBoxContainer" parent="UILayer/HBoxContainer/RightSidebar/MarginContainer/VBoxContainer" unique_id=1259775973]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 60)
 layout_mode = 2
-focus_mode = 0
-text = "RSA (+4)"
+theme_override_constants/separation = 15
 
-[node name="BtnRenewal" type="Button" parent="UILayer/HBoxContainer/RightSidebar/MarginContainer/VBoxContainer" unique_id=717854499]
+[node name="DisconnectionOverlay" parent="UILayer" unique_id=26842393 instance=ExtResource("11_overlay")]
+visible = false
+
+[node name="WelcomeModal" parent="UILayer" unique_id=1974329624 instance=ExtResource("12_welcome")]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 60)
-layout_mode = 2
-focus_mode = 0
-text = "Renewal (+1)"
+
+[node name="BugReportModal" parent="UILayer" unique_id=367434044 instance=ExtResource("14_bug_modal")]
+unique_name_in_owner = true
+visible = false

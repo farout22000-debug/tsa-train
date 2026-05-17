@@ -1,0 +1,135 @@
+[gd_scene load_steps=5 format=3 uid="uid://c83jkw12"]
+
+[ext_resource type="Script" path="res://scripts/ui/bug_report_modal.gd" id="1_modal"]
+[ext_resource type="Theme" uid="uid://cxab3x3872j8x" path="res://resources/themes/main_theme.tres" id="2_theme"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_glass"]
+bg_color = Color(0.05, 0.05, 0.08, 0.85)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.3, 0.4, 0.6, 0.5)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+shadow_color = Color(0, 0, 0, 0.5)
+shadow_size = 15
+
+[node name="BugReportModal" type="ColorRect"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.5)
+script = ExtResource("1_modal")
+theme = ExtResource("2_theme")
+
+[node name="CenterContainer" type="CenterContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Panel" type="PanelContainer" parent="CenterContainer"]
+custom_minimum_size = Vector2(500, 400)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_glass")
+
+[node name="Margin" type="MarginContainer" parent="CenterContainer/Panel"]
+layout_mode = 2
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_top = 24
+theme_override_constants/margin_right = 24
+theme_override_constants/margin_bottom = 24
+
+[node name="FormVBox" type="VBoxContainer" parent="CenterContainer/Panel/Margin"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="HeaderHBox" type="HBoxContainer" parent="CenterContainer/Panel/Margin/FormVBox"]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="CenterContainer/Panel/Margin/FormVBox/HeaderHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 28
+text = "Report a Bug"
+
+[node name="BtnClose" type="Button" parent="CenterContainer/Panel/Margin/FormVBox/HeaderHBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(40, 0)
+layout_mode = 2
+text = "X"
+flat = true
+
+[node name="HSeparator" type="HSeparator" parent="CenterContainer/Panel/Margin/FormVBox"]
+layout_mode = 2
+
+[node name="CategoryLabel" type="Label" parent="CenterContainer/Panel/Margin/FormVBox"]
+layout_mode = 2
+text = "Category:"
+
+[node name="CategoryOption" type="OptionButton" parent="CenterContainer/Panel/Margin/FormVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+item_count = 4
+selected = 0
+popup/item_0/text = "Gameplay"
+popup/item_0/id = 0
+popup/item_1/text = "Visuals"
+popup/item_1/id = 1
+popup/item_2/text = "Network"
+popup/item_2/id = 2
+popup/item_3/text = "Other"
+popup/item_3/id = 3
+
+[node name="DescLabel" type="Label" parent="CenterContainer/Panel/Margin/FormVBox"]
+layout_mode = 2
+text = "Description:"
+
+[node name="DescriptionEdit" type="TextEdit" parent="CenterContainer/Panel/Margin/FormVBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 150)
+layout_mode = 2
+size_flags_vertical = 3
+placeholder_text = "Please describe the issue in detail..."
+wrap_mode = 1
+
+[node name="CharCountLabel" type="Label" parent="CenterContainer/Panel/Margin/FormVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.9, 1, 1)
+text = "0 / 500"
+horizontal_alignment = 2
+
+[node name="BtnSubmit" type="Button" parent="CenterContainer/Panel/Margin/FormVBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.2, 1, 0.4, 1)
+text = "Submit Report"
+
+[node name="SuccessVBox" type="VBoxContainer" parent="CenterContainer/Panel/Margin"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+alignment = 1
+
+[node name="CheckLabel" type="Label" parent="CenterContainer/Panel/Margin/SuccessVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.2, 1, 0.4, 1)
+theme_override_font_sizes/font_size = 64
+text = "✓"
+horizontal_alignment = 1
+
+[node name="ThanksLabel" type="Label" parent="CenterContainer/Panel/Margin/SuccessVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "Thank you for your feedback!"
+horizontal_alignment = 1

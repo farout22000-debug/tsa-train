@@ -26,7 +26,13 @@ GameManager="*res://scripts/autoloads/game_manager.gd"
 AudioManager="*res://scripts/autoloads/audio_manager.gd"
 AnnouncementUI="*res://scenes/ui/announcement_ui.tscn"
 SceneTransition="*res://scenes/autoloads/scene_transition.tscn"
+NetworkManager="*res://scripts/autoloads/network_manager.gd"
+AdminLogger="*res://scripts/autoloads/admin_logger.gd"
+LeaderboardUI="*res://scenes/ui/leaderboard_ui.tscn"
 DebugConsole="*res://scenes/ui/debug_console.tscn"
+NumberFormatter="*res://scripts/autoloads/number_formatter.gd"
+ConfigManager="*res://scripts/autoloads/config_manager.gd"
+EmailManager="*res://scripts/autoloads/email_manager.gd"
 
 [display]
 
@@ -44,4 +50,7 @@ toggle_console={
 
 [rendering]
 
+renderer/rendering_method="forward_plus"
+renderer/rendering_method.web="gl_compatibility"
 textures/canvas_textures/default_texture_filter=0
+

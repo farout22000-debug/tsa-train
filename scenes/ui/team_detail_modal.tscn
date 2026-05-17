@@ -1,0 +1,130 @@
+[gd_scene load_steps=2 format=3 uid="uid://team_detail_modal"]
+
+[ext_resource type="Script" path="res://scripts/admin/team_detail_modal.gd" id="1_modal"]
+
+[node name="TeamDetailModal" type="ColorRect"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.7)
+script = ExtResource("1_modal")
+
+[node name="PanelContainer" type="PanelContainer" parent="."]
+custom_minimum_size = Vector2(800, 600)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -400.0
+offset_top = -300.0
+offset_right = 400.0
+offset_bottom = 300.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBox" type="VBoxContainer" parent="PanelContainer"]
+layout_mode = 2
+theme_override_constants/separation = 20
+
+[node name="Header" type="HBoxContainer" parent="PanelContainer/VBox"]
+layout_mode = 2
+
+[node name="TitleLabel" type="Label" parent="PanelContainer/VBox/Header"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 32
+text = "Team X Details"
+
+[node name="BtnClose" type="Button" parent="PanelContainer/VBox/Header"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Close"
+
+[node name="Columns" type="HBoxContainer" parent="PanelContainer/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 20
+
+[node name="MembersPanel" type="VBoxContainer" parent="PanelContainer/VBox/Columns"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Label" type="Label" parent="PanelContainer/VBox/Columns/MembersPanel"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.4, 0.8, 1, 1)
+theme_override_font_sizes/font_size = 20
+text = "Active Members"
+
+[node name="ScrollContainer" type="ScrollContainer" parent="PanelContainer/VBox/Columns/MembersPanel"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="MembersVBox" type="VBoxContainer" parent="PanelContainer/VBox/Columns/MembersPanel/ScrollContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="LogsPanel" type="VBoxContainer" parent="PanelContainer/VBox/Columns"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 1.5
+
+[node name="Label" type="Label" parent="PanelContainer/VBox/Columns/LogsPanel"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.4, 1, 0.8, 1)
+theme_override_font_sizes/font_size = 20
+text = "Recent Team Activity"
+
+[node name="ScrollContainer" type="ScrollContainer" parent="PanelContainer/VBox/Columns/LogsPanel"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="LogsVBox" type="VBoxContainer" parent="PanelContainer/VBox/Columns/LogsPanel/ScrollContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="HSeparator" type="HSeparator" parent="PanelContainer/VBox"]
+layout_mode = 2
+
+[node name="OverridesHeader" type="Label" parent="PanelContainer/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.4, 0.4, 1)
+theme_override_font_sizes/font_size = 20
+text = "Admin Overrides"
+
+[node name="OverridesGrid" type="HBoxContainer" parent="PanelContainer/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 20
+
+[node name="SpeedInput" type="LineEdit" parent="PanelContainer/VBox/OverridesGrid"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "New Speed"
+
+[node name="BtnSetSpeed" type="Button" parent="PanelContainer/VBox/OverridesGrid"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Set Speed"
+
+[node name="ControlSpacer" type="Control" parent="PanelContainer/VBox/OverridesGrid"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="DistanceInput" type="LineEdit" parent="PanelContainer/VBox/OverridesGrid"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "New Distance"
+
+[node name="BtnSetDistance" type="Button" parent="PanelContainer/VBox/OverridesGrid"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Set Distance"
+
