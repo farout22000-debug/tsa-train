@@ -31,6 +31,8 @@ func _ready():
 	ban_dialog.confirmed.connect(_on_ban_confirmed)
 	add_child(ban_dialog)
 	
+	EventBus.users_sync_received.connect(_on_users_sync_received)
+	
 	hide()
 
 func _on_pwd_confirmed():
@@ -61,8 +63,25 @@ func _on_ban_confirmed():
 	_refresh_list()
 
 func open_panel():
-	_refresh_list()
+	size = get_parent().size
+	_show_loading()
+	if multiplayer.has_multiplayer_peer() and not multiplayer.is_server():
+		GameManager.request_users_list.rpc_id(1)
+	else:
+		_refresh_list()
 	show()
+
+func _show_loading():
+	for child in users_vbox.get_children():
+		child.queue_free()
+	var lbl = Label.new()
+	lbl.text = "  Loading users from server..."
+	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	users_vbox.add_child(lbl)
+
+func _on_users_sync_received(_users: Dictionary):
+	_refresh_list()
 
 func _refresh_list():
 	for child in users_vbox.get_children():

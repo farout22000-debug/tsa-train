@@ -5,3 +5,4 @@ signal auth_result(success: bool, message: String, team_id: int, role: String, p
 
 signal bug_submit_result(success: bool, message: String)
 signal bugs_sync_received(bugs: Dictionary)
+signal users_sync_received(users: Dictionary)

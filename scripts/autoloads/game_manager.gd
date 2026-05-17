@@ -1035,6 +1035,27 @@ func sync_bugs_to_admin(bugs: Dictionary) -> void:
 	EventBus.emit_signal("bugs_sync_received", bugs)
 
 @rpc("any_peer", "call_remote", "reliable")
+func request_users_list() -> void:
+	if not multiplayer.is_server(): return
+	var sender_id = multiplayer.get_remote_sender_id()
+	if not is_admin(sender_id): return
+	
+	# Strip password credentials before transmitting for security
+	var safe_users = {}
+	for email in server_users:
+		var u = server_users[email].duplicate()
+		if u.has("password_hash"): u.erase("password_hash")
+		if u.has("password_salt"): u.erase("password_salt")
+		safe_users[email] = u
+		
+	sync_users_to_admin.rpc_id(sender_id, safe_users)
+
+@rpc("authority", "call_remote", "reliable")
+func sync_users_to_admin(users: Dictionary) -> void:
+	server_users = users
+	EventBus.emit_signal("users_sync_received", users)
+
+@rpc("any_peer", "call_remote", "reliable")
 func admin_update_bug_status(bug_id: String, new_status: String) -> void:
 	if not multiplayer.is_server(): return
 	var sender_id = multiplayer.get_remote_sender_id()
