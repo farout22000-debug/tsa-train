@@ -12,6 +12,10 @@ var ban_target_email: String
 var ban_target_team_id: int
 var ban_target_name: String
 
+var remove_dialog: ConfirmationDialog
+var remove_target_email: String
+var remove_sales_checkbox: CheckBox
+
 func _ready():
 	close_btn.pressed.connect(func(): hide())
 	
@@ -30,6 +34,16 @@ func _ready():
 	ban_dialog.title = "Confirm Ban"
 	ban_dialog.confirmed.connect(_on_ban_confirmed)
 	add_child(ban_dialog)
+	
+	remove_dialog = ConfirmationDialog.new()
+	remove_dialog.title = "Confirm Delete User"
+	remove_dialog.confirmed.connect(_on_remove_confirmed)
+	
+	remove_sales_checkbox = CheckBox.new()
+	remove_sales_checkbox.text = "Also permanently delete all their tickets/sales records"
+	remove_sales_checkbox.button_pressed = false
+	remove_dialog.add_child(remove_sales_checkbox)
+	add_child(remove_dialog)
 	
 	EventBus.users_sync_received.connect(_on_users_sync_received)
 	
@@ -61,6 +75,22 @@ func _on_ban_confirmed():
 	
 	ban_target_email = ""
 	_refresh_list()
+
+func _on_remove_confirmed():
+	if remove_target_email.is_empty(): return
+	var delete_sales = remove_sales_checkbox.button_pressed
+	GameManager.delete_user_admin.rpc_id(1, remove_target_email, delete_sales)
+	
+	var accept = AcceptDialog.new()
+	accept.title = "User Removed"
+	accept.dialog_text = "User " + remove_target_email + " has been permanently deleted."
+	if delete_sales:
+		accept.dialog_text += "\nTheir sales records/save file have also been deleted."
+	add_child(accept)
+	accept.popup_centered()
+	accept.confirmed.connect(func(): accept.queue_free())
+	
+	remove_target_email = ""
 
 func open_panel():
 	size = get_parent().size
@@ -145,6 +175,17 @@ func _refresh_list():
 			ban_dialog.popup_centered()
 		)
 		
+		var btn_remove = Button.new()
+		btn_remove.text = "Remove"
+		btn_remove.add_theme_color_override("font_color", Color(1, 0.2, 0.2))
+		btn_remove.add_theme_color_override("font_hover_color", Color(1, 0.4, 0.4))
+		btn_remove.pressed.connect(func():
+			remove_target_email = email
+			remove_dialog.dialog_text = "Are you sure you want to completely delete the user:\n" + email + "?"
+			remove_sales_checkbox.button_pressed = false
+			remove_dialog.popup_centered()
+		)
+		
 		row.add_child(lbl_email)
 		row.add_child(edit_name)
 		row.add_child(label_team)
@@ -152,5 +193,6 @@ func _refresh_list():
 		row.add_child(btn_save)
 		row.add_child(btn_reset_pwd)
 		row.add_child(btn_ban)
+		row.add_child(btn_remove)
 		
 		users_vbox.add_child(row)

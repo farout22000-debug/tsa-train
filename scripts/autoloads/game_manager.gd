@@ -816,6 +816,41 @@ func update_user_admin(email: String, new_team_id: int, new_name: String, is_ban
 				server_teams[new_team_id].members.append(email)
 
 @rpc("any_peer", "call_remote", "reliable")
+func delete_user_admin(email: String, delete_sales: bool) -> void:
+	if not multiplayer.is_server():
+		delete_user_admin.rpc_id(1, email, delete_sales)
+		return
+		
+	var sender_id = multiplayer.get_remote_sender_id()
+	if not is_admin(sender_id): return
+	
+	if server_users.has(email):
+		var team_id = server_users[email].team_id
+		server_users.erase(email)
+		
+		# Remove from team roster
+		if server_teams.has(team_id):
+			server_teams[team_id].members.erase(email)
+			
+		_save_server_users()
+		
+		# Optionally delete their sales save file
+		if delete_sales:
+			var save_path = "user://savegame_" + email.to_lower().replace("@", "_").replace(".", "_") + ".tres"
+			if DirAccess.exists_absolute(save_path):
+				DirAccess.remove_absolute(save_path)
+				print("[Admin] Deleted sales file for user: ", email)
+				
+		# Broadcast refreshed users list to the requesting admin
+		var safe_users = {}
+		for e in server_users:
+			var u = server_users[e].duplicate()
+			if u.has("password_hash"): u.erase("password_hash")
+			if u.has("password_salt"): u.erase("password_salt")
+			safe_users[e] = u
+		sync_users_to_admin.rpc_id(sender_id, safe_users)
+
+@rpc("any_peer", "call_remote", "reliable")
 func reset_user_password_admin(email: String, new_password_plain: String) -> void:
 	if not multiplayer.is_server():
 		reset_user_password_admin.rpc_id(1, email, new_password_plain)
