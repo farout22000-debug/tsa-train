@@ -837,7 +837,7 @@ func delete_user_admin(email: String, delete_sales: bool) -> void:
 		# Optionally delete their sales save file
 		if delete_sales:
 			var save_path = "user://savegame_" + email.to_lower().replace("@", "_").replace(".", "_") + ".tres"
-			if DirAccess.exists_absolute(save_path):
+			if FileAccess.file_exists(save_path):
 				DirAccess.remove_absolute(save_path)
 				print("[Admin] Deleted sales file for user: ", email)
 				
