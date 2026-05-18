@@ -24,15 +24,19 @@ const TeamCard = preload("res://scenes/ui/team_status_card.tscn")
 @onready var title_label = $VBoxContainer/Label
 
 var cards: Dictionary = {}
+var check_2fa: CheckButton
 
 
 func _ready():
-	if title_label:
-		title_label.mouse_filter = Control.MOUSE_FILTER_STOP
-		title_label.gui_input.connect(_on_title_gui_input)
-		
 	if multiplayer.has_multiplayer_peer():
 		GameManager.request_2fa_status.rpc_id(1)
+		GameManager.require_2fa_status_received.connect(_on_2fa_status_received)
+		
+	check_2fa = CheckButton.new()
+	check_2fa.text = "Require 2FA (New Registrations)"
+	check_2fa.focus_mode = Control.FOCUS_NONE
+	check_2fa.toggled.connect(_on_2fa_toggled)
+	$VBoxContainer/HBoxContainer.add_child(check_2fa)
 		
 	btn_host.pressed.connect(_on_host_pressed)
 	btn_console.pressed.connect(_on_console_pressed)
@@ -108,10 +112,13 @@ func _on_server_started():
 func _on_peer_connected(id: int):
 	print("[ControlTower] Peer connected: ", id)
 
-func _on_title_gui_input(event: InputEvent):
-	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
-		if multiplayer.has_multiplayer_peer():
-			GameManager.toggle_2fa_admin.rpc_id(1)
+func _on_2fa_status_received(enabled: bool):
+	if check_2fa:
+		check_2fa.set_pressed_no_signal(enabled)
+
+func _on_2fa_toggled(toggled_on: bool):
+	if multiplayer.has_multiplayer_peer():
+		GameManager.set_2fa_status.rpc_id(1, toggled_on)
 
 func _on_viewport_size_changed():
 	size = get_viewport_rect().size

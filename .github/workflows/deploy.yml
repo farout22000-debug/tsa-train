@@ -24,10 +24,12 @@ jobs:
         run: |
           mkdir -v -p build/web
           godot --headless --verbose --export-release "Web" build/web/index.html
-      - name: Enable SharedArrayBuffer (coi-serviceworker)
+      - name: Enable SharedArrayBuffer (coi-serviceworker) and Cache Busting
         run: |
           cp assets/coi-serviceworker.js build/web/coi-serviceworker.js
-          sed -i 's/<head>/<head><script src="coi-serviceworker.js"><\/script>/' build/web/index.html
+          sed -i 's|<head>|<head><meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta http-equiv="Expires" content="0">|' build/web/index.html
+          sed -i 's|src="coi-serviceworker.js"|src="coi-serviceworker.js?v=${{ github.sha }}"|g' build/web/index.html
+          sed -i 's|src="index.js"|src="index.js?v=${{ github.sha }}"|g' build/web/index.html
       - name: Add robots.txt
         run: |
           echo "User-agent: *" > build/web/robots.txt

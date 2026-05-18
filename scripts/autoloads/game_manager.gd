@@ -118,7 +118,7 @@ func _process(delta: float):
 				
 		# Periodic Syncing
 		leaderboard_sync_timer += delta
-		if leaderboard_sync_timer >= 1.0: # Sync every 1 sec
+		if leaderboard_sync_timer >= 3.0: # Sync every 3 sec instead of 1 sec
 			leaderboard_sync_timer = 0.0
 			_broadcast_state()
 			_generate_and_broadcast_leaderboard()
@@ -403,17 +403,31 @@ func auth_response(success: bool, message: String, team_id: int, role: String = 
 func _broadcast_state():
 	if not multiplayer.has_multiplayer_peer(): return
 	
+	# Build the admin payload (only compiled once)
 	var admin_payload = {}
 	for t_id in server_teams:
 		var t = server_teams[t_id]
-		sync_team_state.rpc(t_id, t.distance, t.speed)
 		admin_payload[t_id] = {
 			"distance": t.distance,
 			"speed": t.speed,
 			"members": t.members
 		}
 		
-	sync_admin_state.rpc(admin_payload)
+	# Target updates to specific peers to avoid flooding buffers
+	for peer_id in connected_peers:
+		var email = connected_peers[peer_id]
+		if not server_users.has(email): continue
+		
+		var user = server_users[email]
+		var role = user.get("role", "player")
+		
+		if role == "admin":
+			sync_admin_state.rpc_id(peer_id, admin_payload)
+			
+		var team_id = user.get("team_id", 0)
+		if server_teams.has(team_id):
+			var t = server_teams[team_id]
+			sync_team_state.rpc_id(peer_id, team_id, t.distance, t.speed)
 
 
 func _generate_and_broadcast_leaderboard():
@@ -701,6 +715,12 @@ func _process_action_on_server(sender_id: int, team_id: int, email: String, play
 			EventBus.announcement_requested.emit(buff_msg)
 
 	_save_server_teams()
+	
+	# Sync new speed and distance immediately to the active team members for instant feedback
+	for peer_id in connected_peers:
+		var peer_email = connected_peers[peer_id]
+		if server_users.has(peer_email) and server_users[peer_email].get("team_id", 0) == team_id:
+			sync_team_state.rpc_id(peer_id, team_id, team.distance, team.speed)
 
 
 # --- Admin Overrides ---
@@ -1120,26 +1140,36 @@ func log_admin_event_to_client(msg: String, category: String = "INFO"):
 		if get_node_or_null("/root/AdminLogger"):
 			get_node("/root/AdminLogger").log_event(msg, category)
 
+signal require_2fa_status_received(enabled: bool)
+
+@rpc("authority", "call_remote", "reliable")
+func sync_2fa_status(enabled: bool):
+	ConfigManager.require_2fa = enabled
+	require_2fa_status_received.emit(enabled)
+
 @rpc("any_peer", "call_remote", "reliable")
-func toggle_2fa_admin():
+func set_2fa_status(enabled: bool):
 	if not multiplayer.is_server():
-		toggle_2fa_admin.rpc_id(1)
+		set_2fa_status.rpc_id(1, enabled)
 		return
 		
 	var sender_id = multiplayer.get_remote_sender_id()
 	if not is_admin(sender_id): return
 	
-	ConfigManager.require_2fa = not ConfigManager.require_2fa
+	ConfigManager.require_2fa = enabled
 	ConfigManager.save_config()
 	
-	var state_str = "ENABLED" if ConfigManager.require_2fa else "DISABLED"
-	var msg = "SECURITY: 2FA verification for new registrations has been stealth-%s." % [state_str]
+	var state_str = "ENABLED" if enabled else "DISABLED"
+	var msg = "SECURITY: 2FA verification for new registrations has been %s." % [state_str]
 	
 	if get_node_or_null("/root/AdminLogger"):
 		get_node("/root/AdminLogger").log_event(msg, "ADMIN")
 	print("[Server] " + msg)
 	
-	log_admin_event_to_client.rpc_id(sender_id, msg, "SECURITY")
+	for peer_id in connected_peers:
+		if is_admin(peer_id):
+			sync_2fa_status.rpc_id(peer_id, enabled)
+			log_admin_event_to_client.rpc_id(peer_id, msg, "SECURITY")
 
 @rpc("any_peer", "call_remote", "reliable")
 func request_2fa_status():
@@ -1147,6 +1177,4 @@ func request_2fa_status():
 	var sender_id = multiplayer.get_remote_sender_id()
 	if not is_admin(sender_id): return
 	
-	var state_str = "ENABLED" if ConfigManager.require_2fa else "DISABLED"
-	var msg = "System: 2FA verification is currently %s." % [state_str]
-	log_admin_event_to_client.rpc_id(sender_id, msg, "SECURITY")
+	sync_2fa_status.rpc_id(sender_id, ConfigManager.require_2fa)

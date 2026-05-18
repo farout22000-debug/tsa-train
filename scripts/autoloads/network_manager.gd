@@ -47,6 +47,12 @@ func stop_network():
 
 func _on_peer_connected(id: int):
 	print("[NetworkManager] Peer connected: ", id)
+	if peer:
+		var ws_peer = peer.get_peer(id)
+		if ws_peer:
+			ws_peer.outbound_buffer_size = 8388608 # 8MB buffer
+			ws_peer.inbound_buffer_size = 8388608  # 8MB buffer
+			print("[NetworkManager] Configured buffers for peer %d" % id)
 	peer_connected_to_server.emit(id)
 
 func _on_peer_disconnected(id: int):
@@ -55,6 +61,12 @@ func _on_peer_disconnected(id: int):
 
 func _on_connected_to_server():
 	print("[NetworkManager] Connected to server successfully")
+	if peer:
+		var ws_peer = peer.get_peer(1) # Server ID is always 1
+		if ws_peer:
+			ws_peer.outbound_buffer_size = 8388608 # 8MB buffer
+			ws_peer.inbound_buffer_size = 8388608  # 8MB buffer
+			print("[NetworkManager] Configured server peer buffers")
 	client_connected.emit()
 
 func _on_connection_failed():

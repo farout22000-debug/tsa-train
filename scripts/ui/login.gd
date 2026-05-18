@@ -55,6 +55,12 @@ func _ready():
 	for i in range(1, 16):
 		team_select.add_item("Team " + str(i), i - 1)
 		
+	# Setup Registration Tooltips
+	name_reg.tooltip_text = "Enter a username of your choice. This will be displayed on the leaderboards and event logs."
+	email_reg.tooltip_text = "Must be your official TSA Group email, firstname.lastname@tsagroup.com.au."
+	team_select.tooltip_text = "Select your IAG S&S Team"
+	pass_reg.tooltip_text = "Choose a password of at least 4 characters to protect your account"
+		
 	# Pre-fill remembered user details
 	if GameManager.stats:
 		if not GameManager.stats.player_name.is_empty():

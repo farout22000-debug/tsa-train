@@ -147,31 +147,9 @@ func rebuild_action_buttons(buttons_list: Array) -> void:
 
 func _start_tutorial_highlights() -> void:
 	tutorial_active = true
-	
-	tutorial_tween = create_tween().set_loops()
-	
-	var target_btn = null
-	if action_buttons_container.get_child_count() > 0:
-		target_btn = action_buttons_container.get_child(0)
-		
-	if target_btn:
-		tutorial_tween.tween_property(target_btn, "scale", Vector2(1.1, 1.1), 0.5).set_ease(Tween.EASE_OUT)
-		tutorial_tween.parallel().tween_property(target_btn, "modulate", Color(1.2, 1.5, 1.2), 0.5)
-		
-		tutorial_tween.tween_property(target_btn, "scale", Vector2(1.0, 1.0), 0.5).set_ease(Tween.EASE_IN_OUT)
-		tutorial_tween.parallel().tween_property(target_btn, "modulate", Color.WHITE, 0.5)
 
 func _end_tutorial() -> void:
 	tutorial_active = false
-	if tutorial_tween:
-		tutorial_tween.kill()
-		
-	if action_buttons_container.get_child_count() > 0:
-		var target_btn = action_buttons_container.get_child(0)
-		target_btn.scale = Vector2.ONE
-		target_btn.modulate = Color.WHITE
-		
-
 	
 	GameManager.stats.has_seen_tutorial = true
 	GameManager.save_game()
