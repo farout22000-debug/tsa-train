@@ -18,6 +18,12 @@ extends Control
 @onready var btn_verify = %BtnVerify
 @onready var btn_cancel_verify = %BtnCancelVerify
 
+@onready var change_password_panel = %ChangePasswordPanel
+@onready var new_password_input = %NewPasswordInput
+@onready var confirm_password_input = %ConfirmPasswordInput
+@onready var btn_submit_new_password = %BtnSubmitNewPassword
+@onready var btn_cancel_change_password = %BtnCancelChangePassword
+
 var is_registering = false
 var fetched_tunnel_url: String = ""
 var is_trying_fallback: bool = false
@@ -40,6 +46,10 @@ func _ready():
 	btn_verify.pressed.connect(_on_verify_pressed)
 	btn_cancel_verify.pressed.connect(_on_cancel_verify_pressed)
 	verification_panel.hide()
+	
+	btn_submit_new_password.pressed.connect(_on_submit_new_password_pressed)
+	btn_cancel_change_password.pressed.connect(_on_cancel_change_password_pressed)
+	change_password_panel.hide()
 	
 	# DiscoveryService is deprecated in Phase 11
 	# DiscoveryService.discovery_complete.connect(_on_discovery_complete)
@@ -176,6 +186,8 @@ func _on_auth_result(success: bool, message: String, team_id: int, role: String 
 		SceneTransition.change_scene_to_file("res://scenes/screens/main.tscn")
 	elif message == "VERIFICATION_PENDING":
 		_show_verification_panel()
+	elif message == "FORCE_PASSWORD_RESET":
+		_show_change_password_panel()
 	else:
 		error_label.text = "Auth Failed: " + message
 		if verification_panel.visible:
@@ -204,6 +216,39 @@ func _on_verify_pressed():
 
 func _on_cancel_verify_pressed():
 	verification_panel.hide()
+	multiplayer.multiplayer_peer = null
+	btn_login.disabled = false
+	btn_register.disabled = false
+	error_label.text = ""
+
+func _show_change_password_panel():
+	change_password_panel.show()
+	new_password_input.text = ""
+	confirm_password_input.text = ""
+	error_label.text = "You logged in with a temporary password. Please set a new password."
+	btn_submit_new_password.disabled = false
+
+func _on_submit_new_password_pressed():
+	var new_pwd = new_password_input.text.strip_edges()
+	var confirm_pwd = confirm_password_input.text.strip_edges()
+	
+	if new_pwd.length() < 4:
+		error_label.text = "Password must be at least 4 characters."
+		return
+		
+	if new_pwd != confirm_pwd:
+		error_label.text = "Passwords do not match."
+		return
+		
+	var email = email_login.text.strip_edges().to_lower()
+	var temp_pwd = pass_login.text.strip_edges()
+	
+	btn_submit_new_password.disabled = true
+	error_label.text = "Updating password..."
+	GameManager.change_password_with_temp.rpc_id(1, email, temp_pwd, new_pwd)
+
+func _on_cancel_change_password_pressed():
+	change_password_panel.hide()
 	multiplayer.multiplayer_peer = null
 	btn_login.disabled = false
 	btn_register.disabled = false

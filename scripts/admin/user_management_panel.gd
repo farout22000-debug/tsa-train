@@ -3,9 +3,6 @@ extends ColorRect
 @onready var close_btn = %BtnClose
 @onready var users_vbox = %UsersVBox
 
-var pwd_dialog: ConfirmationDialog
-var pwd_input: LineEdit
-var pwd_target_email: String
 
 var ban_dialog: ConfirmationDialog
 var ban_target_email: String
@@ -18,17 +15,6 @@ var remove_sales_checkbox: CheckBox
 
 func _ready():
 	close_btn.pressed.connect(func(): hide())
-	
-	pwd_dialog = ConfirmationDialog.new()
-	pwd_dialog.title = "Reset Password"
-	pwd_dialog.dialog_text = "Enter new password:"
-	pwd_dialog.confirmed.connect(_on_pwd_confirmed)
-	
-	pwd_input = LineEdit.new()
-	pwd_input.secret = true
-	pwd_input.placeholder_text = "New Password"
-	pwd_dialog.add_child(pwd_input)
-	add_child(pwd_dialog)
 	
 	ban_dialog = ConfirmationDialog.new()
 	ban_dialog.title = "Confirm Ban"
@@ -46,18 +32,26 @@ func _ready():
 	add_child(remove_dialog)
 	
 	EventBus.users_sync_received.connect(_on_users_sync_received)
-	
+	EventBus.temp_password_received.connect(_on_temp_password_received)	
 	hide()
 
-func _on_pwd_confirmed():
-	var new_pwd = pwd_input.text.strip_edges()
-	if new_pwd.is_empty(): return
-	GameManager.reset_user_password_admin.rpc_id(1, pwd_target_email, new_pwd)
-	pwd_input.text = ""
-	
+func _on_temp_password_received(email: String, temp_password: String):
+	DisplayServer.clipboard_set(temp_password)
 	var accept = AcceptDialog.new()
-	accept.title = "Success"
-	accept.dialog_text = "Password for " + pwd_target_email + " has been reset."
+	accept.title = "Temporary Password Generated"
+	
+	var vbox = VBoxContainer.new()
+	var lbl = Label.new()
+	lbl.text = "Password for " + email + " has been reset.\nIt has been copied to your clipboard."
+	
+	var line_edit = LineEdit.new()
+	line_edit.text = temp_password
+	line_edit.editable = false
+	
+	vbox.add_child(lbl)
+	vbox.add_child(line_edit)
+	accept.add_child(vbox)
+	
 	add_child(accept)
 	accept.popup_centered()
 	accept.confirmed.connect(func(): accept.queue_free())
@@ -157,10 +151,16 @@ func _refresh_list():
 		var btn_reset_pwd = Button.new()
 		btn_reset_pwd.text = "Reset Pwd"
 		btn_reset_pwd.pressed.connect(func():
-			pwd_target_email = email
-			pwd_dialog.dialog_text = "Enter new password for:\n" + email
-			pwd_input.text = ""
-			pwd_dialog.popup_centered()
+			var confirm = ConfirmationDialog.new()
+			confirm.title = "Confirm Reset"
+			confirm.dialog_text = "Reset password for " + email + "?"
+			confirm.confirmed.connect(func():
+				GameManager.reset_user_password_admin.rpc_id(1, email)
+				confirm.queue_free()
+			)
+			confirm.canceled.connect(func(): confirm.queue_free())
+			add_child(confirm)
+			confirm.popup_centered()
 		)
 		
 		var btn_ban = Button.new()

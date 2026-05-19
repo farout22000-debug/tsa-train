@@ -16,6 +16,7 @@ const EMAIL_SENDER_NAME = "TSA Train Administration"
 
 # 2FA Settings
 var require_2fa: bool = false # Default to false for stealth disable
+var scroll_paused: bool = false
 
 func _ready():
 	# Command line override
@@ -33,6 +34,7 @@ func load_config():
 		current_ip = config.get_value("Network", "ip_address", "127.0.0.1")
 		current_port = config.get_value("Network", "port", 8090)
 		require_2fa = config.get_value("Security", "require_2fa", require_2fa)
+		scroll_paused = config.get_value("Display", "scroll_paused", false)
 	else:
 		save_config() # Create default file
 
@@ -41,6 +43,7 @@ func save_config():
 	config.set_value("Network", "ip_address", current_ip)
 	config.set_value("Network", "port", current_port)
 	config.set_value("Security", "require_2fa", require_2fa)
+	config.set_value("Display", "scroll_paused", scroll_paused)
 	config.save(CONFIG_FILE)
 
 func set_network_settings(ip: String, port: int):

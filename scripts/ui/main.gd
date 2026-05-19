@@ -21,13 +21,13 @@ const SpaceTrackTexture = preload("res://assets/sprites/space_track.jpg")
 
 
 @onready var action_buttons_container = %ActionButtonsContainer
-@onready var btn_mute = %BtnMute
+@onready var btn_settings = %BtnSettings
 @onready var btn_leaderboard = %BtnLeaderboard
 @onready var btn_admin = %BtnAdmin
 @onready var btn_report_bug = %BtnReportBug
 @onready var welcome_modal = %WelcomeModal
 @onready var bug_report_modal = %BugReportModal
-
+@onready var settings_menu = %SettingsMenu
 var tutorial_active: bool = false
 var tutorial_tween: Tween
 
@@ -59,7 +59,7 @@ func _ready():
 	if not GameManager.server_buttons.is_empty():
 		rebuild_action_buttons(GameManager.server_buttons)
 	
-	btn_mute.pressed.connect(_on_mute_pressed)
+	btn_settings.pressed.connect(func(): settings_menu.open_menu())
 	btn_leaderboard.pressed.connect(_on_leaderboard_pressed)
 	btn_admin.pressed.connect(_on_admin_pressed)
 	btn_report_bug.pressed.connect(_on_report_bug_pressed)
@@ -292,11 +292,6 @@ func _on_train_upgraded(level: int):
 	tween.tween_property(train_image, "scale", base_scale * 1.5, 0.3).set_trans(Tween.TRANS_ELASTIC).set_ease(Tween.EASE_OUT)
 	tween.tween_property(train_image, "scale", base_scale, 0.4).set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT)
 
-func _on_mute_pressed() -> void:
-	var bus_idx = AudioServer.get_bus_index("Master")
-	var is_muted = AudioServer.is_bus_mute(bus_idx)
-	AudioServer.set_bus_mute(bus_idx, not is_muted)
-	btn_mute.text = "Unmute" if not is_muted else "Mute"
 
 
 

@@ -372,8 +372,11 @@ func request_login(email: String, password: String):
 
 	
 	if test_hash == user.hash:
-		connected_peers[sender_id] = email
-		auth_response.rpc_id(sender_id, true, "Login successful.", user.team_id, role, user.get("name", "Unknown"), user.get("tickets", 0.0), user.get("has_seen_tutorial", false), user.get("action_counts", {}))
+		if user.get("is_temporary_password", false):
+			auth_response.rpc_id(sender_id, false, "FORCE_PASSWORD_RESET", user.team_id, role, user.get("name", "Unknown"), user.get("tickets", 0.0), user.get("has_seen_tutorial", false), user.get("action_counts", {}))
+		else:
+			connected_peers[sender_id] = email
+			auth_response.rpc_id(sender_id, true, "Login successful.", user.team_id, role, user.get("name", "Unknown"), user.get("tickets", 0.0), user.get("has_seen_tutorial", false), user.get("action_counts", {}))
 	else:
 		auth_response.rpc_id(sender_id, false, "Incorrect password.", 0, "player")
 
@@ -716,12 +719,106 @@ func _process_action_on_server(sender_id: int, team_id: int, email: String, play
 
 	_save_server_teams()
 	
+	# Track sale history
+	var user = server_users[email]
+	if not user.has("sales_history"):
+		user["sales_history"] = []
+	var history_entry = {
+		"timestamp": Time.get_unix_time_from_system(),
+		"action_id": action_id,
+		"action_name": action_name,
+		"speed_increase": actual_increase
+	}
+	user["sales_history"].append(history_entry)
+	if user["sales_history"].size() > 20:
+		user["sales_history"].pop_front()
+	_save_server_users()
+	
 	# Sync new speed and distance immediately to the active team members for instant feedback
 	for peer_id in connected_peers:
 		var peer_email = connected_peers[peer_id]
 		if server_users.has(peer_email) and server_users[peer_email].get("team_id", 0) == team_id:
 			sync_team_state.rpc_id(peer_id, team_id, team.distance, team.speed)
 
+
+@rpc("any_peer", "call_remote", "reliable")
+func request_sales_history() -> void:
+	if not multiplayer.is_server():
+		request_sales_history.rpc_id(1)
+		return
+	var sender_id = multiplayer.get_remote_sender_id()
+	if connected_peers.has(sender_id):
+		var email = connected_peers[sender_id]
+		if server_users.has(email):
+			var hist = server_users[email].get("sales_history", [])
+			sync_sales_history.rpc_id(sender_id, hist)
+
+@rpc("authority", "call_remote", "reliable")
+func sync_sales_history(history: Array) -> void:
+	EventBus.sales_history_received.emit(history)
+
+@rpc("any_peer", "call_remote", "reliable")
+func request_undo_sale(timestamp: float) -> void:
+	if not multiplayer.is_server():
+		request_undo_sale.rpc_id(1, timestamp)
+		return
+		
+	var sender_id = multiplayer.get_remote_sender_id()
+	if not connected_peers.has(sender_id): return
+	var email = connected_peers[sender_id]
+	if not server_users.has(email): return
+	var user = server_users[email]
+	var team_id = user.get("team_id", 0)
+	
+	if not server_teams.has(team_id): return
+	var team = server_teams[team_id]
+	
+	var hist = user.get("sales_history", [])
+	var target_idx = -1
+	for i in range(hist.size()):
+		if hist[i].timestamp == timestamp:
+			target_idx = i
+			break
+			
+	if target_idx == -1:
+		sync_undo_result.rpc_id(sender_id, false, "Sale not found.")
+		return
+		
+	var sale = hist[target_idx]
+	hist.remove_at(target_idx)
+	user["sales_history"] = hist
+	
+	# Revert the action_count in server_users if present
+	if user.has("action_counts"):
+		var a_id = sale.action_id
+		if user.action_counts.has(a_id) and user.action_counts[a_id] > 0:
+			user.action_counts[a_id] -= 1
+	
+	_save_server_users()
+	
+	# Remove speed/distance
+	var old_speed = team.speed
+	team.speed = max(0.0, team.speed - sale.speed_increase)
+	
+	# Penalize 1 minute of distance at current speed
+	var penalty_dist = (old_speed / 60.0)
+	team.distance = max(0.0, team.distance - penalty_dist)
+	
+	_save_server_teams()
+	
+	sync_undo_result.rpc_id(sender_id, true, "Sale reverted successfully.")
+	
+	# Update peers
+	for peer_id in connected_peers:
+		var peer_email = connected_peers[peer_id]
+		if server_users.has(peer_email) and server_users[peer_email].get("team_id", 0) == team_id:
+			sync_team_state.rpc_id(peer_id, team_id, team.distance, team.speed)
+	
+	_generate_and_broadcast_leaderboard()
+
+@rpc("authority", "call_remote", "reliable")
+func sync_undo_result(success: bool, message: String) -> void:
+	pass
 
 # --- Admin Overrides ---
 func is_admin(peer_id: int) -> bool:
@@ -834,6 +931,23 @@ func update_user_admin(email: String, new_team_id: int, new_name: String, is_ban
 				server_teams[old_team].members.erase(email)
 			if server_teams.has(new_team_id) and not email in server_teams[new_team_id].members:
 				server_teams[new_team_id].members.append(email)
+				
+			_save_server_teams()
+			_broadcast_state()
+			_generate_and_broadcast_leaderboard()
+			
+			for peer_id in connected_peers:
+				if connected_peers[peer_id] == email:
+					sync_team_change.rpc_id(peer_id, new_team_id)
+					break
+
+		var safe_users = {}
+		for e in server_users:
+			var u = server_users[e].duplicate()
+			if u.has("hash"): u.erase("hash")
+			if u.has("salt"): u.erase("salt")
+			safe_users[e] = u
+		sync_users_to_admin.rpc_id(sender_id, safe_users)
 
 @rpc("any_peer", "call_remote", "reliable")
 func delete_user_admin(email: String, delete_sales: bool) -> void:
@@ -851,6 +965,16 @@ func delete_user_admin(email: String, delete_sales: bool) -> void:
 		# Remove from team roster
 		if server_teams.has(team_id):
 			server_teams[team_id].members.erase(email)
+			_save_server_teams()
+			
+			for peer_id in connected_peers.keys():
+				if connected_peers[peer_id] == email:
+					force_logout_client.rpc_id(peer_id)
+					connected_peers.erase(peer_id)
+					break
+			
+			_broadcast_state()
+			_generate_and_broadcast_leaderboard()
 			
 		_save_server_users()
 		
@@ -865,25 +989,40 @@ func delete_user_admin(email: String, delete_sales: bool) -> void:
 		var safe_users = {}
 		for e in server_users:
 			var u = server_users[e].duplicate()
-			if u.has("password_hash"): u.erase("password_hash")
-			if u.has("password_salt"): u.erase("password_salt")
+			if u.has("hash"): u.erase("hash")
+			if u.has("salt"): u.erase("salt")
 			safe_users[e] = u
 		sync_users_to_admin.rpc_id(sender_id, safe_users)
+@rpc("authority", "call_remote", "reliable")
+func sync_team_change(new_team_id: int):
+	if stats:
+		stats.team_id = new_team_id
+		save_game()
+		request_rehydration.rpc_id(1, new_team_id)
+
+@rpc("authority", "call_remote", "reliable")
+func force_logout_client():
+	stats = PlayerStats.new()
+	multiplayer.multiplayer_peer = null
+	SceneTransition.change_scene_to_file("res://scenes/screens/login.tscn")
+
 
 @rpc("any_peer", "call_remote", "reliable")
-func reset_user_password_admin(email: String, new_password_plain: String) -> void:
+func reset_user_password_admin(email: String) -> void:
 	if not multiplayer.is_server():
-		reset_user_password_admin.rpc_id(1, email, new_password_plain)
+		reset_user_password_admin.rpc_id(1, email)
 		return
 		
 	var sender_id = multiplayer.get_remote_sender_id()
 	if not is_admin(sender_id): return
 	
 	if server_users.has(email):
+		var temp_password = "TEMP-" + str(randi_range(100000, 999999))
 		var salt = str(randi()) + str(Time.get_unix_time_from_system())
-		var hash = _hash_password(new_password_plain, salt)
-		server_users[email].password_hash = hash
-		server_users[email].password_salt = salt
+		var hash = _hash_password(temp_password, salt)
+		server_users[email].hash = hash
+		server_users[email].salt = salt
+		server_users[email].is_temporary_password = true
 		_save_server_users()
 		
 		# Log the event
@@ -892,9 +1031,47 @@ func reset_user_password_admin(email: String, new_password_plain: String) -> voi
 		if get_node_or_null("/root/AdminLogger"):
 			get_node("/root/AdminLogger").log_event(msg, "SECURITY")
 		print("[Server] " + msg)
-		_flush_server_teams()
+		
+		sync_temp_password_to_admin.rpc_id(sender_id, email, temp_password)
 
+@rpc("authority", "call_remote", "reliable")
+func sync_temp_password_to_admin(email: String, temp_password: String) -> void:
+	EventBus.temp_password_received.emit(email, temp_password)
 
+@rpc("any_peer", "call_remote", "reliable")
+func change_password_with_temp(email: String, temp_password: String, new_password: String) -> void:
+	if not multiplayer.is_server():
+		change_password_with_temp.rpc_id(1, email, temp_password, new_password)
+		return
+		
+	var sender_id = multiplayer.get_remote_sender_id()
+	
+	if not server_users.has(email):
+		auth_response.rpc_id(sender_id, false, "Email not found.", 0)
+		return
+		
+	var user = server_users[email]
+	
+	if not user.get("is_temporary_password", false):
+		auth_response.rpc_id(sender_id, false, "Temporary password not active.", 0)
+		return
+		
+	var test_hash = _hash_password(temp_password, user.salt)
+	
+	if test_hash == user.hash:
+		var salt = str(randi()) + str(Time.get_unix_time_from_system())
+		var hash = _hash_password(new_password, salt)
+		user.hash = hash
+		user.salt = salt
+		user.erase("is_temporary_password")
+		_save_server_users()
+		
+		connected_peers[sender_id] = email
+		var role = user.get("role", "player")
+		if email == "daniel.young@tsagroup.com.au": role = "admin"
+		auth_response.rpc_id(sender_id, true, "Password updated successfully.", user.team_id, role, user.get("name", "Unknown"), user.get("tickets", 0.0), user.get("has_seen_tutorial", false), user.get("action_counts", {}))
+	else:
+		auth_response.rpc_id(sender_id, false, "Incorrect temporary password.", 0, "player")
 @rpc("any_peer", "call_remote", "reliable")
 func wipe_all_data() -> void:
 	if not multiplayer.is_server():
