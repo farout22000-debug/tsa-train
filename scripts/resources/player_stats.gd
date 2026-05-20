@@ -28,6 +28,10 @@ func unlock_event(event_name: String) -> void:
 	if not unlocked_events.has(event_name):
 		unlocked_events.append(event_name)
 
+func lock_event(event_name: String) -> void:
+	if unlocked_events.has(event_name):
+		unlocked_events.erase(event_name)
+
 func add_action(action_name: String) -> void:
 	total_tickets += 1.0
 	if action_counts.has(action_name):

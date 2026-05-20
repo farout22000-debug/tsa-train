@@ -18,6 +18,9 @@ const ClickBurst = preload("res://scenes/vfx/click_burst.tscn")
 const GoldTicket = preload("res://scenes/vfx/gold_ticket.tscn")
 const StarfieldTexture = preload("res://assets/sprites/starfield.jpg")
 const SpaceTrackTexture = preload("res://assets/sprites/space_track.jpg")
+const CloudsTexture = preload("res://assets/sprites/clouds_far.jpg")
+const NormalTrackTexture = preload("res://assets/sprites/track.jpg")
+
 
 
 @onready var action_buttons_container = %ActionButtonsContainer
@@ -53,6 +56,8 @@ func _ready():
 	GameManager.tickets_changed.connect(_on_tickets_changed)
 	GameManager.train_upgraded.connect(_on_train_upgraded)
 	GameManager.milestone_reached.connect(_on_milestone_reached)
+	if GameManager.has_signal("milestone_locked"):
+		GameManager.milestone_locked.connect(_on_milestone_locked)
 	GameManager.logs_updated.connect(_on_logs_updated)
 	
 	GameManager.buttons_updated.connect(rebuild_action_buttons)
@@ -214,6 +219,14 @@ func _on_milestone_reached(event_name: String) -> void:
 		"reach_space":
 			_transition_to_space()
 
+func _on_milestone_locked(event_name: String) -> void:
+	match event_name:
+		"unlock_steam":
+			if steam_particles:
+				steam_particles.emitting = false
+		"reach_space":
+			_revert_from_space()
+
 func _on_server_disconnected() -> void:
 	is_server_connected = false
 	var parallax = $ParallaxBackground
@@ -246,7 +259,29 @@ func _transition_to_space():
 			steam_particles.initial_velocity_min = 50
 			steam_particles.initial_velocity_max = 100
 	)
+
+func _revert_from_space():
+	var tween = create_tween()
+	_add_camera_shake(5)
 	
+	tween.tween_property(sky_sprite, "modulate", Color.BLACK, 2.0)
+	tween.parallel().tween_property(track_sprite, "modulate", Color(0.5, 0.5, 1.0, 0.0), 1.5)
+	
+	tween.tween_callback(func():
+		sky_sprite.texture = CloudsTexture
+		sky_sprite.modulate = Color.WHITE
+		track_sprite.texture = NormalTrackTexture
+		track_sprite.modulate = Color.WHITE
+		
+		# Revert particles to normal steam
+		if steam_particles:
+			steam_particles.color = Color(1.0, 1.0, 1.0, 0.6)
+			steam_particles.gravity = Vector2(0, -98) # Normal gravity
+			steam_particles.direction = Vector2(-1, 0) # Backwards
+			steam_particles.initial_velocity_min = 100
+			steam_particles.initial_velocity_max = 200
+	)
+
 	# Final flash/pop
 	tween.tween_property(sky_sprite, "scale", Vector2(1.1, 1.1), 0.1)
 	tween.tween_property(sky_sprite, "scale", Vector2(1.0, 1.0), 0.5)

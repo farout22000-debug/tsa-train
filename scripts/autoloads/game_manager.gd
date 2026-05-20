@@ -11,6 +11,9 @@ signal buttons_updated(buttons_list: Array)
 signal tickets_changed(new_tickets: float)
 
 const SAVE_PATH = "user://savegame.tres"
+const SERVER_DATABASE_PATH = "user://server_database.json"
+
+# Legacy paths for migration
 const SERVER_DATA_PATH = "user://server_teams.json"
 const USERS_DATA_PATH = "user://server_users.json"
 const BUTTONS_DATA_PATH = "user://server_buttons.json"
@@ -46,8 +49,7 @@ var leaderboard_sync_timer: float = 0.0
 var save_timer: float = 0.0
 var heartbeat_timer: float = 0.0
 
-var _dirty_teams: bool = false
-var _dirty_users: bool = false
+var _dirty_db: bool = false
 var is_maintenance_mode: bool = false
 
 var total_clicks_received: int = 0
@@ -67,16 +69,10 @@ func _ready():
 	load_game()
 	
 	if multiplayer.has_multiplayer_peer() and multiplayer.is_server():
-		_init_server_teams()
-		_init_server_users()
-		_init_server_bugs()
+		_init_server_database()
 	elif not multiplayer.has_multiplayer_peer() and OS.has_feature("admin"):
-		# If running standalone admin before hosting, initialize teams anyway
-		_init_server_teams()
-		_init_server_users()
-		_init_server_bugs()
-		
-	_init_server_buttons()
+		# If running standalone admin before hosting, initialize db anyway
+		_init_server_database()
 	
 	# Ensure signals fire initially
 	call_deferred("emit_signal", "speed_changed", stats.current_speed)
@@ -141,20 +137,15 @@ func _process(delta: float):
 				if current_time > pending_registrations[email].expires_at:
 					pending_registrations.erase(email)
 					
-			if _dirty_teams:
-				_flush_server_teams()
-			if _dirty_users:
-				_flush_server_users()
+			if _dirty_db:
+				_flush_server_database()
 				
 		heartbeat_timer += delta
 		if heartbeat_timer >= 300.0:
 			heartbeat_timer = 0.0
-			if FileAccess.file_exists(SERVER_DATA_PATH):
-				DirAccess.copy_absolute(SERVER_DATA_PATH, SERVER_DATA_PATH + ".bak")
-			if FileAccess.file_exists(USERS_DATA_PATH):
-				DirAccess.copy_absolute(USERS_DATA_PATH, USERS_DATA_PATH + ".bak")
+			if FileAccess.file_exists(SERVER_DATABASE_PATH):
+				DirAccess.copy_absolute(SERVER_DATABASE_PATH, SERVER_DATABASE_PATH + ".bak")
 
-			
 	else:
 		# Fallback if somehow no server teams but we are offline processing
 		var distance_delta = (stats.current_speed / 3600.0) * delta
@@ -164,82 +155,134 @@ func _process(delta: float):
 	_check_milestones()
 	_check_upgrades()
 
-# --- Server Team Management ---
-func _init_server_teams():
-	if FileAccess.file_exists(SERVER_DATA_PATH):
-		var file = FileAccess.open(SERVER_DATA_PATH, FileAccess.READ)
+# --- Unified Server Database Management ---
+func _init_server_database():
+	var legacy_migration_needed = false
+	if FileAccess.file_exists(SERVER_DATABASE_PATH):
+		var file = FileAccess.open(SERVER_DATABASE_PATH, FileAccess.READ)
 		var json = JSON.new()
 		if json.parse(file.get_as_text()) == OK and json.data is Dictionary:
-			# JSON keys are strings, convert to ints
-			for k in json.data:
-				server_teams[k.to_int()] = json.data[k]
+			var db_data = json.data
+			if db_data.has("teams"):
+				for k in db_data["teams"]:
+					server_teams[k.to_int()] = db_data["teams"][k]
+			if db_data.has("users"):
+				server_users = db_data["users"]
+			if db_data.has("buttons"):
+				server_buttons = db_data["buttons"]
+			if db_data.has("bugs"):
+				server_bugs = db_data["bugs"]
 		else:
-			if FileAccess.file_exists(SERVER_DATA_PATH + ".bak"):
-				var bak_file = FileAccess.open(SERVER_DATA_PATH + ".bak", FileAccess.READ)
+			if FileAccess.file_exists(SERVER_DATABASE_PATH + ".bak"):
+				var bak_file = FileAccess.open(SERVER_DATABASE_PATH + ".bak", FileAccess.READ)
 				var bak_json = JSON.new()
 				if bak_json.parse(bak_file.get_as_text()) == OK and bak_json.data is Dictionary:
-					for k in bak_json.data:
-						server_teams[k.to_int()] = bak_json.data[k]
+					var db_data = bak_json.data
+					if db_data.has("teams"):
+						for k in db_data["teams"]:
+							server_teams[k.to_int()] = db_data["teams"][k]
+					if db_data.has("users"):
+						server_users = db_data["users"]
+					if db_data.has("buttons"):
+						server_buttons = db_data["buttons"]
+					if db_data.has("bugs"):
+						server_bugs = db_data["bugs"]
 					if get_node_or_null("/root/AdminLogger"):
-						get_node("/root/AdminLogger").log_event("WARNING: Restored server_teams from backup.", "SYSTEM")
-	
-	# Ensure 15 teams exist
+						get_node("/root/AdminLogger").log_event("WARNING: Restored server_database from backup.", "SYSTEM")
+	else:
+		legacy_migration_needed = true
+		_migrate_legacy_data()
+
+	# Ensure 15 teams exist and are well-formed
 	for i in range(1, 16):
 		if not server_teams.has(i):
 			server_teams[i] = {"distance": 0.0, "speed": 20.0, "members": [], "logs": [], "milestones": []}
-
 		else:
 			if not server_teams[i].has("logs"):
 				server_teams[i]["logs"] = []
 			if not server_teams[i].has("milestones"):
 				server_teams[i]["milestones"] = []
+				
+	# Ensure buttons are initialized
+	if server_buttons.is_empty():
+		server_buttons = DEFAULT_BUTTONS.duplicate(true)
+		
+	_sanitize_rosters()
 
-func _init_server_users():
+	if legacy_migration_needed:
+		_flush_server_database()
+
+func _migrate_legacy_data():
+	# Migrate teams
+	if FileAccess.file_exists(SERVER_DATA_PATH):
+		var file = FileAccess.open(SERVER_DATA_PATH, FileAccess.READ)
+		var json = JSON.new()
+		if json.parse(file.get_as_text()) == OK and json.data is Dictionary:
+			for k in json.data:
+				server_teams[k.to_int()] = json.data[k]
+	
+	# Migrate users
 	if FileAccess.file_exists(USERS_DATA_PATH):
 		var file = FileAccess.open(USERS_DATA_PATH, FileAccess.READ)
 		var json = JSON.new()
 		if json.parse(file.get_as_text()) == OK and json.data is Dictionary:
 			server_users = json.data
-		else:
-			if FileAccess.file_exists(USERS_DATA_PATH + ".bak"):
-				var bak_file = FileAccess.open(USERS_DATA_PATH + ".bak", FileAccess.READ)
-				var bak_json = JSON.new()
-				if bak_json.parse(bak_file.get_as_text()) == OK and bak_json.data is Dictionary:
-					server_users = bak_json.data
-					if get_node_or_null("/root/AdminLogger"):
-						get_node("/root/AdminLogger").log_event("WARNING: Restored server_users from backup.", "SYSTEM")
-
-func _save_server_users():
-	_dirty_users = true
-
-func _flush_server_users():
-	var file = FileAccess.open(USERS_DATA_PATH, FileAccess.WRITE)
-	file.store_string(JSON.stringify(server_users))
-	_dirty_users = false
-
-func _init_server_buttons():
+			
+	# Migrate buttons
 	if FileAccess.file_exists(BUTTONS_DATA_PATH):
 		var file = FileAccess.open(BUTTONS_DATA_PATH, FileAccess.READ)
 		var json = JSON.new()
 		if json.parse(file.get_as_text()) == OK and json.data is Array:
 			server_buttons = json.data
-			return
 			
-	server_buttons = DEFAULT_BUTTONS.duplicate(true)
-	_save_server_buttons()
+	# Migrate bugs
+	if FileAccess.file_exists(BUGS_DATA_PATH):
+		var file = FileAccess.open(BUGS_DATA_PATH, FileAccess.READ)
+		var json = JSON.new()
+		if json.parse(file.get_as_text()) == OK and json.data is Dictionary:
+			server_bugs = json.data
+			
+	if get_node_or_null("/root/AdminLogger"):
+		get_node("/root/AdminLogger").log_event("Migrated legacy database files to unified server_database.json", "SYSTEM")
+
+func _sanitize_rosters():
+	# Step 1. Collect real teams for all users
+	var user_actual_teams = {}
+	for email in server_users:
+		user_actual_teams[email] = server_users[email].get("team_id", 0)
+		
+	# Step 2. Clean teams
+	for t_id in server_teams:
+		var members = server_teams[t_id].members
+		var valid_members = []
+		for email in members:
+			# User exists and actually belongs to this team
+			if user_actual_teams.has(email) and user_actual_teams[email] == t_id:
+				valid_members.append(email)
+		server_teams[t_id].members = valid_members
+
+func _save_server_users():
+	_dirty_db = true
 
 func _save_server_buttons():
-	var file = FileAccess.open(BUTTONS_DATA_PATH, FileAccess.WRITE)
-	file.store_string(JSON.stringify(server_buttons))
+	_dirty_db = true
 
 func _save_server_teams():
-	_dirty_teams = true
+	_dirty_db = true
+	
+func _save_server_bugs():
+	_dirty_db = true
 
-func _flush_server_teams():
-	var file = FileAccess.open(SERVER_DATA_PATH, FileAccess.WRITE)
-	file.store_string(JSON.stringify(server_teams))
-	_dirty_teams = false
-
+func _flush_server_database():
+	var db_data = {
+		"teams": server_teams,
+		"users": server_users,
+		"buttons": server_buttons,
+		"bugs": server_bugs
+	}
+	var file = FileAccess.open(SERVER_DATABASE_PATH, FileAccess.WRITE)
+	file.store_string(JSON.stringify(db_data))
+	_dirty_db = false
 
 func _hash_password(password: String, salt: String) -> String:
 	return (password + salt).sha256_text()
@@ -449,7 +492,7 @@ func _generate_and_broadcast_leaderboard():
 		leaderboard_updated.emit(lb)
 
 # --- Client Sync Receivers ---
-@rpc("authority", "call_remote", "unreliable")
+@rpc("authority", "call_remote", "reliable")
 func sync_team_state(team_id: int, distance: float, speed: float):
 	if stats and stats.team_id == team_id:
 		stats.total_distance = distance
@@ -457,7 +500,7 @@ func sync_team_state(team_id: int, distance: float, speed: float):
 		distance_changed.emit(stats.total_distance)
 		speed_changed.emit(stats.current_speed)
 
-@rpc("authority", "call_remote", "unreliable")
+@rpc("authority", "call_remote", "reliable")
 func sync_admin_state(payload: Dictionary):
 	if stats and stats.role == "admin":
 		admin_teams = payload
@@ -793,22 +836,54 @@ func request_undo_sale(timestamp: float) -> void:
 		var a_id = sale.action_id
 		if user.action_counts.has(a_id) and user.action_counts[a_id] > 0:
 			user.action_counts[a_id] -= 1
+			
+	# Decrement tickets
+	if user.has("tickets") and user.tickets > 0:
+		user.tickets -= 1
+		sync_undo_tickets.rpc_id(sender_id, user.tickets)
 	
 	_save_server_users()
 	
-	# Remove speed/distance
-	var old_speed = team.speed
+	# Remove speed/distance purely based on the sale's increase
 	team.speed = max(0.0, team.speed - sale.speed_increase)
 	
-	# Penalize 1 minute of distance at current speed
-	var penalty_dist = (old_speed / 60.0)
-	team.distance = max(0.0, team.distance - penalty_dist)
+	# Clean Slate Log Removal
+	var player_name = user.get("name", "")
+	var search_str = player_name + " Sold a " + sale.action_name + "!"
+	var found_log_idx = -1
+	for i in range(team.logs.size() - 1, -1, -1):
+		if team.logs[i].begins_with(search_str):
+			found_log_idx = i
+			break
+	if found_log_idx != -1:
+		team.logs.remove_at(found_log_idx)
+		if multiplayer.has_multiplayer_peer():
+			sync_team_logs.rpc(team_id, team.logs)
+			
+	# Milestone Relocking
+	var relocked_any = false
+	if active_milestone_config:
+		for i in range(team.milestones.size() - 1, -1, -1):
+			var m_name = team.milestones[i]
+			for ms in active_milestone_config.milestones:
+				if ms.event_name == m_name and ms.type == Milestone.MilestoneType.DISTANCE:
+					if team.distance < ms.threshold:
+						team.milestones.remove_at(i)
+						sync_milestone_lock.rpc(team_id, m_name)
+						relocked_any = true
+						break
+				elif ms.event_name == m_name and ms.type == Milestone.MilestoneType.SPEED:
+					if team.speed < ms.threshold:
+						team.milestones.remove_at(i)
+						sync_milestone_lock.rpc(team_id, m_name)
+						relocked_any = true
+						break
 	
 	_save_server_teams()
 	
 	sync_undo_result.rpc_id(sender_id, true, "Sale reverted successfully.")
 	
-	# Update peers
+	# Update peers instantly
 	for peer_id in connected_peers:
 		var peer_email = connected_peers[peer_id]
 		if server_users.has(peer_email) and server_users[peer_email].get("team_id", 0) == team_id:
@@ -817,8 +892,25 @@ func request_undo_sale(timestamp: float) -> void:
 	_generate_and_broadcast_leaderboard()
 
 @rpc("authority", "call_remote", "reliable")
+func sync_undo_tickets(new_tickets: float) -> void:
+	if stats:
+		stats.total_tickets = new_tickets
+		tickets_changed.emit(new_tickets)
+
+@rpc("authority", "call_remote", "reliable")
+func sync_milestone_lock(team_id: int, event_name: String) -> void:
+	if stats and stats.team_id == team_id:
+		if stats.has_unlocked(event_name):
+			stats.lock_event(event_name)
+			# You can optionally emit a signal for UI updates here if needed
+
+@rpc("authority", "call_remote", "reliable")
 func sync_undo_result(success: bool, message: String) -> void:
-	pass
+	if success:
+		save_game()
+		if get_node_or_null("/root/Main"):
+			# Or if there's an EventBus notification
+			EventBus.announcement_requested.emit(message)
 
 # --- Admin Overrides ---
 func is_admin(peer_id: int) -> bool:
@@ -881,7 +973,7 @@ func reset_simulation() -> void:
 		server_teams[t_id].logs.clear()
 		server_teams[t_id].milestones.clear()
 		
-	_flush_server_teams()
+	_save_server_teams()
 	_broadcast_state()
 
 	
@@ -927,8 +1019,9 @@ func update_user_admin(email: String, new_team_id: int, new_name: String, is_ban
 		
 		# Move roster if team changed
 		if old_team != new_team_id:
-			if server_teams.has(old_team):
-				server_teams[old_team].members.erase(email)
+			for t_id in server_teams:
+				if server_teams[t_id].members.has(email):
+					server_teams[t_id].members.erase(email)
 			if server_teams.has(new_team_id) and not email in server_teams[new_team_id].members:
 				server_teams[new_team_id].members.append(email)
 				
@@ -962,20 +1055,21 @@ func delete_user_admin(email: String, delete_sales: bool) -> void:
 		var team_id = server_users[email].team_id
 		server_users.erase(email)
 		
-		# Remove from team roster
-		if server_teams.has(team_id):
-			server_teams[team_id].members.erase(email)
-			_save_server_teams()
-			
-			for peer_id in connected_peers.keys():
-				if connected_peers[peer_id] == email:
-					force_logout_client.rpc_id(peer_id)
-					connected_peers.erase(peer_id)
-					break
-			
-			_broadcast_state()
-			_generate_and_broadcast_leaderboard()
-			
+		# Remove from team roster across all teams to ensure no ghost drivers
+		for t_id in server_teams:
+			if server_teams[t_id].members.has(email):
+				server_teams[t_id].members.erase(email)
+		_save_server_teams()
+		
+		for peer_id in connected_peers.keys():
+			if connected_peers[peer_id] == email:
+				force_logout_client.rpc_id(peer_id)
+				connected_peers.erase(peer_id)
+				break
+		
+		_broadcast_state()
+		_generate_and_broadcast_leaderboard()
+		
 		_save_server_users()
 		
 		# Optionally delete their sales save file
@@ -1087,15 +1181,9 @@ func wipe_all_data() -> void:
 	server_teams.clear()
 	server_users.clear()
 	server_bugs.clear()
-	if FileAccess.file_exists(SERVER_DATA_PATH):
-		DirAccess.remove_absolute(SERVER_DATA_PATH)
-	if FileAccess.file_exists(USERS_DATA_PATH):
-		DirAccess.remove_absolute(USERS_DATA_PATH)
-	if FileAccess.file_exists(BUGS_DATA_PATH):
-		DirAccess.remove_absolute(BUGS_DATA_PATH)
-	_init_server_teams()
-	_init_server_users()
-	_init_server_bugs()
+	if FileAccess.file_exists(SERVER_DATABASE_PATH):
+		DirAccess.remove_absolute(SERVER_DATABASE_PATH)
+	_init_server_database()
 	_broadcast_state()
 	print("[Server] Factory reset complete.")
 
@@ -1117,7 +1205,7 @@ func admin_override_team(team_id: int, new_speed: float, new_distance: float) ->
 		if new_distance >= 0:
 			t.distance = new_distance
 		
-		_flush_server_teams()
+		_save_server_teams()
 		_broadcast_state()
 
 		
@@ -1208,17 +1296,8 @@ func _check_upgrades() -> void:
 	pass
 
 # --- Bug Reporting System ---
-func _init_server_bugs() -> void:
-	if FileAccess.file_exists(BUGS_DATA_PATH):
-		var file = FileAccess.open(BUGS_DATA_PATH, FileAccess.READ)
-		var json = JSON.new()
-		if json.parse(file.get_as_text()) == OK and json.data is Dictionary:
-			server_bugs = json.data
 
-func _save_server_bugs() -> void:
-	var file = FileAccess.open(BUGS_DATA_PATH, FileAccess.WRITE)
-	file.store_string(JSON.stringify(server_bugs, "\t"))
-	file.close()
+
 
 func _broadcast_bugs_to_admins() -> void:
 	for peer_id in connected_peers:
